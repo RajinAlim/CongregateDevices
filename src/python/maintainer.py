@@ -18,14 +18,14 @@ github_maintainer_link = "https://github.com/RajinAlim/CongregateDevices/blob/ma
 github_link = lambda path: f"https://github.com/RajinAlim/CongregateDevices/blob/main/{path}"
 
 update_history = {
-    "src/python/assets.py": 1609940002,
-    "src/python/configs.py": 1609940002,
-    "src/python/executor.py": 1609940002,
-    "src/python/helps.py": 1609940002,
-    "src/python/parsers.py": 1609940002,
-    "src/python/maintainer.py": 1609940002,
-    "main.py": 1609940002,
-    "README.txt": 1609940116
+    "src/python/assets.py": 1609945656,
+    "src/python/configs.py": 1609945656,
+    "src/python/executor.py": 1609945656,
+    "src/python/helps.py": 1609945656,
+    "src/python/parsers.py": 1609945656,
+    "src/python/maintainer.py": 1609945794,
+    "main.py": 1609945656,
+    "README.txt": 1609945656
 }
 
 class WebSource:
@@ -208,70 +208,57 @@ def download_file(filepath, path=None):
 
 def is_organized():
     global project_dir
-    paths = split_path(wd)
-    if "CongregateDevices" in paths:
-        project_dir = os.path.join(*paths[:paths.index("CongregateDevices") + 1])
+    folders = split_path(wd)
+    if "CongregateDevices" in folders:
+        i = folders.index("CongregateDevices")
+        project_dir = os.sep.join(folders[:i + 1])
     elif os.path.exists("CongregateDevices"):
         project_dir = os.path.abspath("CongregateDevices")
     else:
         return False
     for path in ESSENTIALS:
-        folder_path = os.path.join(project_dir, path)
-        if not os.path.exists(folder_path):
-            return False
         for f in ESSENTIALS[path]:
-            file_path = os.path.join(folder_path, f)
-            if not os.path.exists(file_path) and f != "README.txt":
+            if not os.path.exists(os.path.join(project_dir, path, f)) and f != "README.txt":
                 return False
     return True
 
 def organize():
     global project_dir
-    prev_wd = os.getcwd()
-    os.chdir(wd)
-    if project_dir and os.path.exists(project_dir):
-        os.chdir(project_dir)
-    else:
+    is_organized()
+    if project_dir is None:
         os.makedirs("CongregateDevices", exist_ok=True)
         project_dir = os.path.abspath("CongregateDevices")
-    if project_dir not in sys.path:
-        sys.path.insert(0, project_dir)
-    missing = []
-    file_in_cd = [f for f in os.listdir() if f.endswith(".py")]
-    for path in ESSENTIALS:
-        if path == "":
+    missing = [file for path in ESSENTIALS for file in ESSENTIALS[path]]
+    paths = {file: os.path.join(project_dir, path) for path in ESSENTIALS for file in ESSENTIALS[path]}
+    for item in os.listdir():
+        if os.path.splitext(item)[1] not in (".py", ".txt"):
             continue
-        full_path = os.path.join(project_dir, path)
-        if not os.path.exists(full_path) and full_path:
-            os.makedirs(full_path)
-        for f in ESSENTIALS[path]:
-            is_missing = True
-            if os.path.exists(f):
-                with open(f) as fl:
-                    data = fetch_data(fl.read())
-                if data is not None and data[0] == f:
-                    file_path = os.path.join(full_path, f)
-                    fl = open(file_path, "w")
-                    fl.close()
-                    shutil.move(f, file_path)
-                    is_missing = False
-            if is_missing:
-                for filename in file_in_cd:
-                    if not os.path.exists(filename):
-                        continue
-                    with open(filename) as fl:
-                        data = fetch_data(fl.read())
-                    if data is not None and data[0] == f:
-                        file_path = os.path.join(full_path, f)
-                        fl = open(file_path, "w")
-                        fl.close()
-                        shutil.move(filename, file_path)
-                        is_missing = False
-            if is_missing and f.endswith(".py"):
-                file_title = "/".join(split_path(path) + [f])
-                missing.append(file_title)
-    if not missing:
-        os.chdir(project_dir)
+        with open(item) as f:
+            data = fetch_data(f.read())
+        if data is None:
+            continue
+        name = data[0]
+        target_path = paths.get(name)
+        if target_path is None:
+            continue
+        if not os.path.exists(target_path):
+            os.makedirs(target_path)
+        target_path = os.path.join(target_path, name)
+        if os.path.exists(target_path):
+            with open(target_path) as f:
+                old_data = fetch_data(f.read())
+            if old_data is not None:
+                if old_data[1] >= data[1]:
+                    try:
+                        os.unlink(item)
+                    except:
+                        pass
+                    if name in missing:
+                        missing.remove(name)
+                    continue
+        shutil.move(item, target_path)
+        if name in missing:
+            missing.remove(name)
     return missing
 
 def finish_up():
@@ -324,4 +311,4 @@ if __name__ =="__main__":
 
 
 #name: maintainer.py
-#updated: 1609940002
+#updated: 1609945794
