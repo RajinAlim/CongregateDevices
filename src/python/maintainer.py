@@ -11,23 +11,21 @@ from urllib.request import urlretrieve
 wd = os.getcwd()
 ESSENTIALS = {
     os.path.join("src", "python"): ['assets.py', 'configs.py', 'executor.py', 'helps.py', 'parsers.py', 'maintainer.py'],
-    "src": [],
     "": ['main.py', 'README.txt'],
-    ".git": []
 }
 project_dir = None
 github_maintainer_link = "https://github.com/RajinAlim/CongregateDevices/blob/main/src/python/maintainer.py"
 github_link = lambda path: f"https://github.com/RajinAlim/CongregateDevices/blob/main/{path}"
 
 update_history = {
-    "src/python/assets.py": 1609933537,
-    "src/python/configs.py": 1609933537,
-    "src/python/executor.py": 1609933537,
-    "src/python/helps.py": 1609933537,
-    "src/python/parsers.py": 1609933537,
-    "src/python/maintainer.py": 1609933639,
-    "main.py": 1609933537,
-    "README.txt": 1609933537
+    "src/python/assets.py": 1609940002,
+    "src/python/configs.py": 1609940002,
+    "src/python/executor.py": 1609940002,
+    "src/python/helps.py": 1609940002,
+    "src/python/parsers.py": 1609940002,
+    "src/python/maintainer.py": 1609940002,
+    "main.py": 1609940002,
+    "README.txt": 1609940116
 }
 
 class WebSource:
@@ -175,6 +173,8 @@ def available_update():
             add = False
             if file in update_history:
                 full_path = os.path.join(wd, file)
+                if not os.path.exists(full_path):
+                    continue
                 with open(full_path) as f:
                     updated = fetch_data(f.read())[1]
                 if updated is not None and updated < u_history[file]:
@@ -239,6 +239,8 @@ def organize():
     missing = []
     file_in_cd = [f for f in os.listdir() if f.endswith(".py")]
     for path in ESSENTIALS:
+        if path == "":
+            continue
         full_path = os.path.join(project_dir, path)
         if not os.path.exists(full_path) and full_path:
             os.makedirs(full_path)
@@ -280,18 +282,6 @@ def finish_up():
             return False
     prev_wd = os.getcwd()
     os.chdir(project_dir)
-    required_folders = [os.path.abspath(folder) for folder in ESSENTIALS]
-    required_files = [os.path.abspath(os.path.join(key, file)) for key in ESSENTIALS for file in ESSENTIALS[key]]
-    
-    for f in list(traverse_dir(".")):
-        if f.endswith(os.sep):
-            f = f[:-1]
-        if f in required_files or f in required_folders or not os.path.exists(f):
-            continue
-        if os.path.isfile(f):
-            os.unlink(f)
-        else:
-            shutil.rmtree(f)
     
     update_history = {}
     for path in ESSENTIALS:
@@ -299,7 +289,9 @@ def finish_up():
         for f in ESSENTIALS[path]:
             file_path = os.path.join(path, f)
             file_abspath = os.path.abspath(file_path)
-            file_path = '/'.join(split_path(file_path)[1:])
+            if not os.path.exists(file_abspath):
+                continue
+            file_path = "/".join(split_path(file_path)[1:])
             update_history[file_path] = update_timestamp(file_abspath)
     update_history = json.dumps(update_history, indent=4)
     
@@ -321,7 +313,6 @@ def finish_up():
     configs_source = re.sub(pat, "NOT_AT = \"127.0.0.1\"\n", configs_source, flags=re.DOTALL)
     with open(os.path.join(project_dir, "src", "python", "configs.py"), "w") as f:
         f.write(configs_source)
-    
     try:
         os.chdir(prev_wd)
     except:
@@ -333,4 +324,4 @@ if __name__ =="__main__":
 
 
 #name: maintainer.py
-#updated: 1609933639
+#updated: 1609940002
