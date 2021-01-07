@@ -5,7 +5,7 @@ import logging
 import os
 
 
-log_level = logging.ERROR #DEBUG level will print all the messages.
+log_level = logging.CRITICAL + 1 #DEBUG level will print all the messages.
 log_format = "%(levelname)s On %(asctime)s in %(funcName)s, %(filename)s at %(lineno)s, %(threadName)s: %(message)s"
 date_format = "%d-%m-%y %H:%M:%S"
 formatter = logging.Formatter(log_format, date_format)
@@ -32,7 +32,7 @@ BODY_SIZE = 2048
 DECREASE = BODY_SIZE // 16 
 BUFFER_SIZE = BODY_SIZE + HEADER_SIZE
 ABOUT = """Project: Congregate Devices.
-Last Updated Thursday, 07 January 2021, 01:19 PM
+Last Updated Thursday, 07 January 2021, 02:49 PM
 About Author:
     Name: Rajin Alim.
     Age: 17 (at the time of doing this project)
@@ -120,4 +120,4 @@ os.chdir(data['home_dir'])
 
 
 #name: configs.py
-#updated: 1610003754
+#updated: 1610009096
