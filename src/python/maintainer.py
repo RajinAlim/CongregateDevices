@@ -221,7 +221,7 @@ def is_organized():
                 return False
     return True
 
-def organize(start="."):
+def organize(start=".."):
     global project_dir
     is_organized()
     if project_dir is None:
