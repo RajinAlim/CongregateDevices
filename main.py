@@ -81,7 +81,7 @@ except ImportError as exc:
                 real_path = os.path.join(maintainer.project_dir ,*title.split("/"))
                 shutil.move(path, real_path)
         if failed > 0:
-            print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Download {'them' if failed > 1 else 'it'} manually from 'https://drive.google.com/folderview?id=1-XeM32MuvnqhXOmda4uIU004iJsqXMII' or try again later.")
+            print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Download {'them' if failed > 1 else 'it'} manually from 'https://drive.google.com/drive/folders/10TGK4auocqd7sYTlOhwRDmd_c2t8cRxf' or try again later.")
             sys.exit()
         else:
             print("All missing files were successfully downloaded! You have to reopen 'main.py'.\nFrom now, when you want to use this programme, you have to run 'main.py' file which is located at '{maintainer.project_dir.replace('/storage/emulated/0', 'Internal Storage')}' folder.")
@@ -98,14 +98,16 @@ if available_updates:
     print("Following files have updated by developer:")
     for data in available_updates:
         file, date = data
-        file = os.path.basename(file)
+        file = file.split("/")[-1]
         print(file, ", Updated on ", date, sep="")
     update = input("Download updates?(y/n) :").strip().lower() == "y"
     if update:
         for i, data in enumerate(available_updates):
             count = i + 1
             file, date = data
-            path = maintainer.download_file(file)
+            parts = file.split("/")
+            path = os.getcwd() if len(parts) == 1 else os.path.join(maintainer.project_dir, *parts[:-1])
+            path = maintainer.download_file(file, path)
             if path is None:
                 print("Failed to download", os.path.basename(file))
                 if i == 0:
@@ -114,7 +116,12 @@ if available_updates:
             print("Downloaded", os.path.basename(file))
             print("Remaining", len(available_updates) - 1)
         else:
-            maintainer.organize()
+            with open(os.path.join(maintainer.project_dir, "src", "python", "maintainer.py")) as f:
+                data_to_clear = maintainer.retrieve_history(f.read())
+            if data_to_clear is not None and "clear_data" in data_to_clear:
+                for key in data_to_clear:
+                    if key in configs.data['history']:
+                        configs.data['history'].pop(key)
             print(len(available_updates), "file(s) successfully updated. Exiting programme. Kindly reopen (rerun 'main.py').")
             sys.exit()
     print()
@@ -127,8 +134,6 @@ while True:
     else:
         prompt = configs.PROMPT
     cmd = input(prompt).strip()
-    if cmd:
-        configs.data['total_commands'] += 1
     current_time = time.time()
     interval = current_time - time_track
     interval = int(interval)
@@ -142,14 +147,6 @@ while True:
         print("Updates:", "\n".join(news), sep="\n")
     if chats:
         print("Messages:", "\n".join(chats), sep='\n')
-    if not configs.joined:
-        available = executor.check()
-        if type(available) is tuple:
-            host, zone_id = available
-            print(host + "'s Zone with", zone_id, "Zone ID is available.")
-            join = input("Join " + host + "'s Zone? (y/n): ").strip().lower() == "y"
-            if join:
-                print(executor.execute("join " + zone_id)[0])
     if configs.running and configs.client and not configs.server_id and configs.client.last_contact:
         now = time.time()
         interval = abs(now - configs.client.last_contact)
@@ -163,8 +160,8 @@ while True:
 
 """Project: Congregate Devices.
 Author: Rajin Alim.
-Last Updated Thursday, 07 January 2021, 04:52 PM"""
+Last Updated Thursday, 14 January 2021, 11:16 AM"""
 
 
 #name: main.py
-#updated: 1610016720
+#updated: 1610600921

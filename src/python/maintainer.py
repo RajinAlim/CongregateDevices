@@ -18,14 +18,15 @@ github_maintainer_link = "https://github.com/RajinAlim/CongregateDevices/blob/ma
 github_link = lambda path: f"https://github.com/RajinAlim/CongregateDevices/blob/main/{path}"
 
 update_history = {
-    "src/python/assets.py": 1610015910,
-    "src/python/configs.py": 1610015910,
-    "src/python/executor.py": 1610015910,
-    "src/python/helps.py": 1610015910,
-    "src/python/parsers.py": 1610015910,
-    "src/python/maintainer.py": 1610015910,
-    "main.py": 1610016720,
-    "README.txt": 1610015910
+    "src/python/assets.py": 1610547841,
+    "src/python/configs.py": 1610547198,
+    "src/python/executor.py": 1610546980,
+    "src/python/helps.py": 1610545308,
+    "src/python/parsers.py": 1610546280,
+    "src/python/maintainer.py": 1610547577,
+    "main.py": 1610546457,
+    "README.txt": 1610545308,
+    "clear_data": []
 }
 
 class WebSource:
@@ -111,23 +112,27 @@ def retrieve_code(text):
 
 def update_timestamp(filename):
     old_ts_pat = r"\n\n\n#name: .+?\n#updated: \d+"
+    old_stat = os.stat(filename)
     with open(filename) as f:
         text = f.read()
-    new_timestamp = int(os.stat(filename).st_mtime)
+    new_timestamp = int(old_stat.st_mtime)
     basename = os.path.basename(filename)
     text = re.sub(old_ts_pat, f"\n\n\n#name: {basename}\n#updated: {new_timestamp}", text, re.DOTALL)
     with open(filename, 'w') as f:
         f.write(text)
+    os.utime(filename, (old_stat.st_atime, old_stat.st_mtime))
     return new_timestamp
 
 def update_comment_time(filename):
     pat = r"(\"{3}.+?)Last Updated .+?((\n.+?)?\"{3})"
+    old_stat = os.stat(filename)
     with open(filename) as f:
         text = f.read()
     current_time = datetime.datetime.now().strftime("%A, %d %B %Y, %I:%M %p")
     text = re.sub(pat, r"\1Last Updated " + current_time + r"\2", text, flags=re.DOTALL)
     with open(filename, 'w') as f:
         f.write(text)
+    os.utime(filename, (old_stat.st_atime, old_stat.st_mtime))
     return True
 
 def fetch_data(text):
@@ -273,18 +278,22 @@ def finish_up():
                 continue
             file_path = "/".join(split_path(file_path)[1:])
             update_history[file_path] = update_timestamp(file_abspath)
+    update_history['clear_data'] = []
     update_history = json.dumps(update_history, indent=4)
     
+    old_stat = os.stat(os.path.join(project_dir, "src", "python", "maintainer.py"))
     with open(os.path.join(project_dir, "src", "python", "maintainer.py")) as f:
         maintainer_source = f.read()
     pat = r"\nupdate_history\s*?=\s*?(\{[\n\s\"\w\d_/\\.:,]+?}\n)"
     maintainer_source = re.sub(pat, "\nupdate_history = " + update_history + "\n", maintainer_source, re.DOTALL)
     with open(os.path.join(project_dir, "src", "python", "maintainer.py"), "w") as f:
         f.write(maintainer_source)
+    os.utime(os.path.join(project_dir, "src", "python", "maintainer.py"), (old_stat.st_atime, old_stat.st_mtime))
     
     update_comment_time(os.path.join(project_dir, "src", "python", "configs.py"))
     update_comment_time("main.py")
     
+    old_stat = os.stat(os.path.join(project_dir, "src", "python", "configs.py"))
     with open(os.path.join(project_dir, "src", "python", "configs.py")) as f:
         configs_source = f.read()
     pat = r"log_level\s*=\s*logging\s*\.\s*[A-Z]+?.*?\n"
@@ -293,15 +302,17 @@ def finish_up():
     configs_source = re.sub(pat, "NOT_AT = \"127.0.0.1\"\n", configs_source, flags=re.DOTALL)
     with open(os.path.join(project_dir, "src", "python", "configs.py"), "w") as f:
         f.write(configs_source)
+    os.utime(os.path.join(project_dir, "src", "python", "configs.py"), (old_stat.st_atime, old_stat.st_mtime))
     try:
         os.chdir(prev_wd)
     except:
         pass
     return True
 
+is_organized()
 if __name__ =="__main__":
     finish_up()
 
 
 #name: maintainer.py
-#updated: 1610015910
+#updated: 1610601006

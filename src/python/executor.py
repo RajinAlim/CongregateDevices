@@ -17,6 +17,9 @@ from src.python import maintainer
 from src.python.configs import logger
 
 
+n_cmd = 0
+session_cmds = []
+
 class DataSaver():
     
     def __init__(self):
@@ -85,7 +88,6 @@ def join(server_id, controlled=False):
         return "Invalid Zone Id."
     if not configs.server_id:
         print("Requested for join. Waiting for Zone host's approval..")
-    configs.joined = True
     client = assets.Client(res, None)
     intro = {
         "name": configs.data["name"],
@@ -120,15 +122,20 @@ def join(server_id, controlled=False):
     t.start()
     configs.informed = False
     assets.zone_host = msg
+    configs.joined = True
     if msg == configs.data["name"]:
         msg = "You"
-    data = (server_id.upper(), msg, intro['joined'])
+    data = [server_id.upper(), msg, intro['joined']]
     for i, record in enumerate(configs.data['history']):
         if data[0] == record[0] and data[1] == record[1]:
+            n = record[3] + 1
+            data.append(n)
             configs.data['history'][i] = data
             break
     else:
+        data.append(0)
         configs.data['history'].append(data)
+        configs.data['history'].reverse()
     if not configs.server_id:
         configs.data['joined_n'] += 1
     return f"Joined {msg}'s Zone."
@@ -364,6 +371,7 @@ def share_zone():
             if not sender.receiver:
                 continue
             output = f"\tSending {sender.status.get('files', '')} files, {parsers.pretify(sender.status.get('total size', 0))} to {sender.receiver}\n"
+            output += "\tSession started on " + datetime.datetime.fromtimestamp(sender.started).strftime("%I:%M:%S %p") + ".\n"
             output += "\t" + f"Completed: {sender.status.get('completed', 0)}\n"
             overall_progress = sender.status.get('sent size', 0) / sender.status.get('total size', 1)
             overall_progress = round(overall_progress, 2) * 100
@@ -394,6 +402,7 @@ def share_zone():
             if not receiver.sender:
                 continue
             output = f"\tReceiving {receiver.status.get('files', 0)} files, {parsers.pretify(receiver.status.get('total size', 0))} from {receiver.sender}\n"
+            output += "\tSession started on " + datetime.datetime.fromtimestamp(receiver.started).strftime("%I:%M:%S %p") + ".\n"
             output += "\t" + f"Completed: {receiver.status.get('completed', 0)}\n"
             overall_progress = receiver.status.get('received size', 0) / receiver.status.get('total size', 1)
             overall_progress = round(overall_progress, 2) * 100
@@ -526,7 +535,9 @@ def cd(dr, visitor=''):
             os.chdir(cwd)
             return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
         else:
-            items = parsers.flexible_select(dr, take="dir")
+            items = parsers.flexible_select(dr)
+            while items and not os.path.isdir(items[0]):
+                items.pop(0)
             if items:
                 assets.visitors_data[visitor]['wd'] = items[0]
                 os.chdir(cwd)
@@ -540,7 +551,9 @@ def cd(dr, visitor=''):
     if dr == "home":
         os.chdir(configs.data['home_dir'])
         return "Current Working directory: " + parsers.pretify_path(os.getcwd())
-    items = parsers.flexible_select(dr, take="dir")
+    items = parsers.flexible_select(dr)
+    while items and not os.path.isdir(items[0]):
+        items.pop(0)
     if items:
         dr = items[0]
         os.chdir(dr)
@@ -870,9 +883,9 @@ def view(topic, visitor=''):
         datas = configs.data['history'].copy()
         if not datas:
             return "No Zone record exists."
-        max_lens = [len("Zone ID"), len("Zone Host"), 0]
+        max_lens = [len("Zone ID"), len("Zone Host"), len("Last Joined"), len("Times Joined")]
         for i, data in enumerate(datas):
-            zone_id, zone_host, last_joined = data
+            zone_id, zone_host, last_joined, joined_n = data
             last_joined = datetime.datetime.fromtimestamp(last_joined).strftime("%A, %d %B %Y, %I:%M %p")
             if max_lens[0] < len(zone_id):
                 max_lens[0] = len(zone_id)
@@ -880,10 +893,12 @@ def view(topic, visitor=''):
                 max_lens[1] = len(zone_host)
             if max_lens[2] < len(last_joined):
                 max_lens[2] = len(last_joined)
-            datas[i] = (zone_id, zone_host, last_joined)
-        strs = ["Zone ID".ljust(max_lens[0]) + " - " + "Zone Host".center(max_lens[1]) + " - " + "Last Joined", "-" * max_lens[0] + "   " + "-" * max_lens[1] + "   " + "-" * max_lens[2]]
+            if max_lens[3] < len(str(joined_n)):
+                max_lens[3] = len(str(joined_n))
+            datas[i] = (zone_id, zone_host, last_joined, joined_n)
+        strs = ["Zone ID".ljust(max_lens[0]) + " - " + "Zone Host".center(max_lens[1]) + " - " + "Last Joined".center(max_lens[2]) + " - " + "Times Joined", "-" * max_lens[0] + "   " + "-" * max_lens[1] + "   " + "-" * max_lens[2] + "   " + '-' * max_lens[3]]
         for data in datas:
-            as_str = data[0].ljust(max_lens[0]) + " - " + data[1].center(max_lens[1]) + " - " + data[2]
+            as_str = data[0].ljust(max_lens[0]) + " - " + data[1].center(max_lens[1]) + " - " + data[2].center(max_lens[2]) + " - " + str(data[3]).center(max_lens[3])
             strs.append(as_str)
         return f"Total Joined: {configs.data['joined_n']} times\nTotal Hosted: {configs.data['hosted_n']} times.\n\nDistinct Zone Records:\n" + '\n'.join(strs)
     outputs = {
@@ -1097,11 +1112,23 @@ def serve_visitors():
     assets.service_running = False
 
 def execute(cmd):
+    global n_cmd
+    n_cmd += 1
+    shortcut = False
     saver.save()
+    if cmd and not cmd.replace("p", "") and session_cmds:
+        n = cmd.count("p")
+        cmd = session_cmds[-n]
+        shortcut = True
+    if cmd == "status":
+        cmd = "view status"
     cm, args = parsers.parse_command(cmd)
     if cm in configs.data["command_records"]:
         configs.data["command_records"][cm] += 1
-    else:
+        configs.data['total_commands'] += 1
+        if not shortcut:
+            session_cmds.append(cmd)
+    elif cmd:
         configs.data["invalid_commands"] += 1
     if cm == "exit":
         if (configs.running and not configs.server_id) or (bool(configs.server_id) and len(assets.zone_info.get("members", [])) > 1):
@@ -1268,10 +1295,19 @@ def execute(cmd):
             headers = {"type": "response", "topic": "share", "status": "403"}
             msg = parsers.Message.info({}, headers)
             configs.client.messages.put(msg)
+    if not configs.joined and (n_cmd == 1 or n_cmd % 5 == 0):
+        available = check()
+        if type(available) is tuple:
+            host, zone_id = available
+            print(host + "'s Zone with", zone_id, "Zone ID is available.")
+            join = input("Join " + host + "'s Zone? (y/n): ").strip().lower() == "y"
+            if join:
+                print(tasks['join'](zone_id))
+                return '', [], []
     if kicked:
         leave(True)
     return output, news, chats
 
 
 #name: executor.py
-#updated: 1610015910
+#updated: 1610600573

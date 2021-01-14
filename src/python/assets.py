@@ -1,4 +1,5 @@
 import math
+import datetime
 import time
 import os
 import json
@@ -254,7 +255,6 @@ def send_message(client):
     while configs.running and client.is_active:
         msg = client.messages.get()
         client.send(msg)
-        logger.debug(msg)
 
 def receive_message(client):
     with lock:
@@ -267,7 +267,6 @@ def receive_message(client):
             client.received_msg.put(msg)
             client.last_contact = time.time()
             configs.min_ip = parsers.min_ip(configs.min_ip, msg.get_headers("min_ip")[0])
-            logger.debug(msg)
         else:
             continue
     with lock:
@@ -748,6 +747,7 @@ class Sender:
         self.status = {}
         self.receiver = receiver
         self.public = public
+        self.started = int(datetime.datetime.now().timestamp())
     
     def inform(self):
         self.files = list(set(self.files))
@@ -797,7 +797,7 @@ class Sender:
             self.status["sending"] = title
             self.status["size"] = size
             self.status["chunks"] = chunks
-            
+            stats = os.stat(file)
             headers = {
                 "type": "bytes",
                 "files": self.status["files"],
@@ -807,6 +807,8 @@ class Sender:
                 "chunks": chunks,
                 "sent": 0,
                 "completed": 0,
+                "atime": stats.st_atime,
+                "mtime": stats.st_mtime,
                 "to": self.receiver
             }
             configs.data['total_sent'] += size
@@ -875,6 +877,7 @@ class Receiver:
             "received chunks": 0,
             "records": {}
         }
+        self.started = int(datetime.datetime.now().timestamp())
     
     def receive_info(self):
         
@@ -897,7 +900,6 @@ class Receiver:
         self.dirmaps = [info[key] for key in info if key.startswith("dirmap")]
         for dirmap in self.dirmaps:
             for f in parsers.parse_dirmap(dirmap):
-                logger.error(f)
                 if os.sep != "\\" and "\\" in f:
                     f = f.replace("\\", "/")
                 if os.sep != "/" and "/" in f:
@@ -940,15 +942,13 @@ class Receiver:
                 return
             infos = msg.get_headers("filename", "filesize", "chunks", "chunk", "sent size", "sent", "completed")
             if any(info is None for info in infos):
-                continue
+                logger.error(msg)
             file, self.received_size, self.completed = infos[0], int(infos[4]), int(infos[-1])
             if os.sep != "\\" and "\\" in file:
                 file = file.replace("\\", "/")
             if os.sep != "/" and "/" in file:
                 file = file.replace("/", "\\")
-            
             self.status["received size"] = int(infos[4])
-            self.status["completed"] = int(infos[-1])
             self.status["receiving"] = infos[0]
             self.status["size"] = int(infos[1])
             self.status["received"] = int(infos[-2])
@@ -979,7 +979,12 @@ class Receiver:
                 f.write(msg.content)
             if infos[2] == infos[3]:
                 configs.data['total_received'] += int(infos[1])
-        self.status["completed"] += 1
+                self.status["completed"] += 1
+                a_time, m_time = msg.get_headers("atime", "mtime")
+                if a_time is not None and m_time is not None:
+                    a_time = float(a_time)
+                    m_time = float(m_time)
+                    os.utime(self.abspaths[file], (a_time, m_time))
         self.finish_up()
         return True
     
@@ -997,4 +1002,4 @@ class Receiver:
 
 
 #name: assets.py
-#updated: 1610015910
+#updated: 1610600175

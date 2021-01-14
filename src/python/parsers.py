@@ -277,7 +277,7 @@ def parse_command(cmd_str):
             return (command, args)
     return (None, [])
 
-def flexible_select(f, items=None, return_exact=False, take="all"):
+def flexible_select(f, items=None, return_exact=False):
     if "internal storage" in f.lower() or "sd card" in f.lower():
         folders = split_path(f)
         if "internal storage" in f.lower():
@@ -343,7 +343,6 @@ def flexible_select(f, items=None, return_exact=False, take="all"):
                 else:
                     files.append(os.path.abspath(file))
     else:
-        got = False
         for item in items:
             if f in item:
                 if return_exact:
@@ -352,22 +351,6 @@ def flexible_select(f, items=None, return_exact=False, take="all"):
                     files.append(item)
                 else:
                     files.append(os.path.abspath(item))
-                got = True
-        if not got:
-            for item in items:
-                if f.lower() in item.lower():
-                    if return_exact:
-                        if f.lower() not in os.path.basename(item).lower():
-                            continue
-                        files.append(item)
-                    else:
-                        files.append(os.path.abspath(item))
-    if take != "all":
-        for file in files.copy():
-            if ("ld" in take or "d" in take) and not os.path.isdir(file):
-                files.remove(file)
-            elif not os.path.isfile(file):
-                files.remove(file)
     return files
 
 class Message:
@@ -462,4 +445,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1610015910
+#updated: 1610596581

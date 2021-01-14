@@ -43,7 +43,8 @@ helps = {
     "about": "Run 'about' command to know about this project and it's author.",
     "help": "Run 'help' command to know how the programme works.\nRun 'help {command}' command to get help any specific command, here {command} should be the command you want to know about.\nRun 'help all' to get help about all commands",
     "share this": "Run 'share this' command to see how to share this programme.",
-    "how to": "Run 'how to share' to see an example how to share files between two devices."
+    "how to": "Run 'how to share' to see an example how to share files between two devices.",
+    "p": "This is a shortcut to run the previous command. Run 'p' command to run the previous command you ran."
 }
 formats = {
     "pwd": "pwd",
@@ -80,7 +81,7 @@ formats = {
 }
 
 def share_this(path):
-    drive_link = "https://drive.google.com/folderview?id=1-XeM32MuvnqhXOmda4uIU004iJsqXMII"
+    drive_link = "https://drive.google.com/drive/folders/10TGK4auocqd7sYTlOhwRDmd_c2t8cRxf"
     github_link = "https://github.com/RajinAlim/CongregateDevices"
     print("To use this programme all requirements are the files of this project and any way to run python script.\nFirst let's talk about the second requirement, way to run python script.\nTo run python script in Android phones, QpythonL is probably smallest app. Open Play Store and search 'QpythonL' and download the first one of search results. On other devices, do search for 'how to run python in {os}' ({os} should be whatever operating system you are using) on Youtube.")
     print(f"Let's talk about the second requirement, the files.\nThe files of this programme can be downloaded from Google Drive or Github. Link for both is below:\nGoogle drive link: {drive_link}\nGithub repostory link: {github_link}.\n\nIf you want to do this without Internet, it's okay.Here's how this can be done:")
@@ -110,4 +111,4 @@ def help(topic=None):
 
 
 #name: helps.py
-#updated: 1610015910
+#updated: 1610600802
