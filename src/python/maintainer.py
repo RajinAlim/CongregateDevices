@@ -18,14 +18,14 @@ github_maintainer_link = "https://github.com/RajinAlim/CongregateDevices/blob/ma
 github_link = lambda path: f"https://github.com/RajinAlim/CongregateDevices/blob/main/{path}"
 
 update_history = {
-    "src/python/assets.py": 1610547841,
-    "src/python/configs.py": 1610547198,
-    "src/python/executor.py": 1610546980,
-    "src/python/helps.py": 1610545308,
-    "src/python/parsers.py": 1610546280,
-    "src/python/maintainer.py": 1610547577,
-    "main.py": 1610546457,
-    "README.txt": 1610545308,
+    "src/python/assets.py": 1610604354,
+    "src/python/configs.py": 1610601868,
+    "src/python/executor.py": 1610600573,
+    "src/python/helps.py": 1610601868,
+    "src/python/parsers.py": 1610601868,
+    "src/python/maintainer.py": 1610613304,
+    "main.py": 1610601871,
+    "README.txt": 1610556103,
     "clear_data": []
 }
 
@@ -179,19 +179,23 @@ def available_update():
             return []
         available = []
         for file, timestamp in u_history.items():
+            if file == "clear_data":
+                continue
             add = False
-            if file in update_history:
-                updated = update_history[file]
+            path = os.path.join(project_dir, *file.split("/"))
+            if os.path.exists(path):
+                with open(path) as f:
+                    text = f.read()
+                data = fetch_data(text)
+                if data is None:
+                    continue
+                updated = data[1]
                 if updated < u_history[file]:
-                    add = True
-            elif file not in update_history:
-                add = True
-            if add:
-                try:
-                    update_time = datetime.datetime.fromtimestamp(u_history[file]).strftime("%d %B %Y, %I:%M %p")
-                    available.append((file, update_time))
-                except Exception as exc:
-                    pass
+                    try:
+                        update_time = datetime.datetime.fromtimestamp(u_history[file]).strftime("%d %B %Y, %I:%M %p")
+                        available.append((file, update_time))
+                    except Exception as exc:
+                        pass
         return available
 
 def download_file(title, path="."):
@@ -204,6 +208,10 @@ def download_file(title, path="."):
         with open(abspath, "w") as f:
             code = retrieve_code(page.read())
             f.write(code)
+        data = fetch_data(code)
+        if data is not None:
+            mtime = data[1]
+            os.utime(abspath, (int(datetime.datetime.now().timestamp()), mtime))
         return abspath
 
 def is_organized():
@@ -284,7 +292,7 @@ def finish_up():
     old_stat = os.stat(os.path.join(project_dir, "src", "python", "maintainer.py"))
     with open(os.path.join(project_dir, "src", "python", "maintainer.py")) as f:
         maintainer_source = f.read()
-    pat = r"\nupdate_history\s*?=\s*?(\{[\n\s\"\w\d_/\\.:,]+?}\n)"
+    pat = r"\nupdate_history\s*?=\s*?(\{[\n\s\"\w\d_/\\.:,\[\]]+?}\n)"
     maintainer_source = re.sub(pat, "\nupdate_history = " + update_history + "\n", maintainer_source, re.DOTALL)
     with open(os.path.join(project_dir, "src", "python", "maintainer.py"), "w") as f:
         f.write(maintainer_source)
@@ -315,4 +323,4 @@ if __name__ =="__main__":
 
 
 #name: maintainer.py
-#updated: 1610601006
+#updated: 1610613304
