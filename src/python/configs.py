@@ -31,7 +31,7 @@ BODY_SIZE = 2048
 DECREASE = BODY_SIZE // 16 
 BUFFER_SIZE = BODY_SIZE + HEADER_SIZE
 ABOUT = """Project: Congregate Devices.
-Last Updated Monday, 18 January 2021, 11:47 AM
+Last Updated Monday, 18 January 2021, 06:32 PM
 About Author:
     Name: Rajin Alim.
     Age: 17 (at the time of doing this project)
@@ -76,7 +76,7 @@ if os.path.exists("CongregateDevices_data.json"):
                 except:
                     pass
         except Exception as exc:
-            pass
+            logger.error(exc)
 if any(key not in data for key in ESSSENTIAL_KEYS):
     if "name" not in data:
         name = input("Enter your username: ").strip()
@@ -127,4 +127,4 @@ os.chdir(data['home_dir'])
 
 
 #name: configs.py
-#updated: 1610897273
+#updated: 1610970390

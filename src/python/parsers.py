@@ -196,7 +196,7 @@ def total_size(path):
     return size
 
 @cache
-def pretify(m):
+def pretify(m, do_round=True):
     
     try:
         m = float(int(m))
@@ -209,7 +209,7 @@ def pretify(m):
         i += 1
         if i >= 3:
             break
-    return f"{round(m, 2) if not m.is_integer() else int(m)} {measures[i]}"
+    return f"{round(m, 2) if not m.is_integer() else int(m)} {measures[i]}" if do_round else str(m) + measures[i]
 
 @cache
 def real_size(size):
@@ -423,10 +423,8 @@ def flexible_select(f, items=None, return_exact=False):
             not_to_take.add(item)
         else:
             ext = os.path.splitext(item)[1][1:].strip()
-            logger.warning(ext)
             if takeonly.startswith("."):
                 if not (ext == takeonly[1:].strip()):
-                    logger.warning(item)
                     not_to_take.add(item)
             elif takeonly in ("image", "photo") and ext not in image_ext:
                 not_to_take.add(item)
@@ -544,20 +542,22 @@ def flexible_select(f, items=None, return_exact=False):
     if match:
         logger.warning(match.group())
         min_, max_ = match.groups()
-        p_min = "." in min_
-        min_ = real_size(min_)
-        logger.warning(min_)
-        if max_ is not None:
-            max_ = real_size(max_)
+        if max_ is None:
+            size, unit = re.search(r"(\d+(?:\.\d+)?)([kmgKMB]?[bB])?", min_).groups()
+            unit = "b" if unit is None else unit
+            size = float(size)
+            x = size
+            p = 1
+            while not x.is_integer():
+                x *= 10
+                p *= 10
+            size += (1 / p)
+            size = str(size)
+            max_ = size + unit
             logger.warning(max_)
-        else:
-            p = int(math.log(min_, 1024))
-            p = 3 if p > 3 else p
-            if p_min:
-                max_ = min_ + math.pow(10, p)
-            else:
-                max_ = min_ + math.pow(1024, p)
-        logger.warning((min_, max_))
+        min_ = real_size(min_)
+        max_ = real_size(max_)
+        logger.warning((pretify(min_), pretify(max_, False), min_, max_))
         for item in items:
             size = total_size(item)
             if min_ <= size and size <= max_:
@@ -684,4 +684,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1610948727
+#updated: 1610972384

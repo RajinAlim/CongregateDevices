@@ -134,7 +134,7 @@ def join(server_id, controlled=False):
             configs.data['history'][i] = data
             break
     else:
-        data.append(0)
+        data.append(1)
         configs.data['history'].append(data)
         configs.data['history'].reverse()
     if not configs.server_id:
@@ -615,8 +615,9 @@ def select(f, visitor=''):
         else:
             try:
                 items = parsers.flexible_select(f)
-            except:
+            except Exception as exc:
                 items = []
+                logger.error(exc)
             for item in items:
                 if item in assets.visitors_data[visitor]['selected'] and item in configs.data['protected'] :
                     continue
@@ -648,8 +649,9 @@ def select(f, visitor=''):
     else:
         try:
             items = parsers.flexible_select(f)
-        except:
+        except Exception as exc:
             items = []
+            logger.error(exc)
         if items:
             for item in items:
                 if item in configs.selected:
@@ -679,8 +681,9 @@ def unselect(f, visitor=''):
         else:
             try:
                 items = parsers.flexible_select("i:" + f, assets.visitors_data[visitor]['selected'], True)
-            except:
+            except Exception as exc:
                 items = []
+                logger.error(exc)
             for item in items:
                 if item in assets.visitors_data[visitor]['selected']:
                     assets.visitors_data[visitor]['selected'].remove(item)
@@ -704,8 +707,9 @@ def unselect(f, visitor=''):
     else:
         try:
             items = parsers.flexible_select("i:" + f, configs.selected, True)
-        except:
+        except Exception as exc:
             items = []
+            logger.error(exc)
         for item in items:
             configs.selected.remove(item)
         if len(items) < 4:
@@ -714,14 +718,15 @@ def unselect(f, visitor=''):
             return str(len(items)) + " items has been unselected."
     return ""
 
-def search(f, location=None):
+def search(f, location=None, visitor=""):
     if location is not None:
         if not os.path.isdir(location):
             return "No such directory."
         try:
             items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
-        except:
+        except Exception as exc:
             items = []
+            logger.error(exc)
         configs.selected.extend(items)
         if items and len(items) <= 4:
             return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
@@ -733,15 +738,17 @@ def search(f, location=None):
         print("Searching the whole phone...might take a while....")
         try:
             items = parsers.flexible_select(f, parsers.traverse_dir(location) + parsers.traverse_dir("/storage/emulated/0"), True)
-        except:
+        except Exception as exc:
             items = []
+            logger.error(exc)
         configs.selected.extend(items)
     else:
         location = os.getcwd()
         try:
             items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
-        except:
+        except Exception as exc:
             items = []
+            logger.error(exc)
         configs.selected.extend(items)
     if items and len(items) <= 4:
         return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
@@ -765,8 +772,9 @@ def protect(item):
             return f"{len(os.listdir())} items has been added to protected items' list."
         try:
             items = parsers.flexible_select("i:" + item)
-        except:
+        except Exception as exc:
             items = []
+            logger.error(exc)
         for item in items:
             if item not in configs.data['protected']:
                 configs.data['protected'].append(item)
@@ -792,8 +800,9 @@ def unprotect(item):
         return str(len(configs.selected)) + " item(s) has been removed from protected items' list"
     try:
         items = parsers.flexible_select("i:" + item, configs.data['protected'], True)
-    except:
+    except Exception as exc:
         items = []
+        logger.error(exc)
     for item in items:
         if item in configs.data['protected']:
             configs.data['protected'].remove(item)
@@ -1226,7 +1235,7 @@ def execute(cmd):
         logger.debug((cm, args))
         if cm == "visit":
             output = "Already Visiting " + configs.visiting
-        elif cm in ("share with", "share", "protect", "unprotect", "clear") or (cm == "username" and args) or (cm == "view" and args != ["selected"]):
+        elif cm in ("share with", "share", "protect", "unprotect", "clear", "kick", "search") or (cm == "username" and args) or (cm == "view" and args != ["selected"]):
             output = "This command is not runnable while visiting"
         elif cm not in tasks:
             output = "Invalid Command!!"
@@ -1397,4 +1406,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1610948630
+#updated: 1610973100
