@@ -18,11 +18,205 @@ helps = {
     "pwd": "Run 'pwd' command to know your working directory.Every file you receive will be stored according to your working directory.",
     "ls": "Run 'ls' command to get the list of items in current working directory.",
     "dirmap": "Run 'dirmap' to get a visual representation of your working directory.\nRun 'dirmap {directory}' to get visual representation of any directory.",
-    "select": "Run 'select {item}' command to select any item, here {item} can be any file or folder.\nRun 'select {part_of_name}' to select any items whose name match the letters in the curly braces.\nRun 'select {n}' command to select the nth item of your current working directory.For example, to select 3rd item of your current working directory run 'select 3' command.\nRun 'select {m} {n} {p}' command to select the mth, nth and pth item of your current working directory.For example to select 1st, 2nd and 3rd item of your current working directory run 'select 1 2 3'.In this way, you can select as much items you want.\nRun 'select {m}-{n}' to select from mth to nth item of your current working directory.For example, to select 3rd to 10th items in your current working directory run 'select 3-10' command.\nRun 'select all' command to select everything in your current working directory.\nSelecting will help you to share multiple items at once.",
-    "unselect": "Run 'unselect {item}' to unselect any of the items you selected, here {items} will be the file or folder to unselect.You can also run 'unselect all' command to unselect all the items you selected.\nRun 'unselect {part_of_name}' to unselect any items whose name match the letters in the curly braces.\nRun 'unselect {n}' command to unselect the nth item from the selected items.For example, to unselect 3rd item from selected items run 'unselect 3' command.\nRun 'unselect {m} {n} {p}' command to unselect the mth, nth and pth item from selected items.For example to unselect 1st, 2nd and 3rd item from selected items run 'unselect 1 2 3'.In this way, you can unselect as much items you want.\nRun 'unselect {m}-{n}' to unselect from mth to nth item from selected items.For example, to unselect 3rd to 10th items from selected items run 'unselect 3-10' command.",
-    "search": "Run 'search {item}' command to search for a specific keyword in the whole device, here {item} should be a word, any file or directory matching the word will be selected.Note that, this feature is only available in Android phones.",
-    "protect": "Run 'protect {item}' command to hide any file or folder from visitors, here {item} can be name or path of a file or folder.\nRun 'protect {part_of_name}' to protect any items whose name match the letters in the curly braces.\nRun 'protect {n}' command to protect the nth item of your current working directory.For example, to protect 3rd item of your current working directory run 'protect 3' command.\nRun 'protect {m} {n} {p}' command to protect the mth, nth and pth item of your current working directory.For example to protect 1st, 2nd and 3rd item of your current working directory run 'protect 1 2 3'.In this way, you can protect as much item you want.\nRun 'protect {m}-{n}' to protect from mth to nth item of your current working directory.For example, to protect 3rd to 10th items in your current working directory run 'protect 3-10' command.\nRun 'protect selected' command to hide the selected from visitors.\nRun 'protect all' command to protect everything in your current working directory.\nProtected items are hidden from visitors, this feature is for protecting users' privacy.",
-    "unprotect": "Run 'unprotect {item}' command remove a file or folder from the list of protected items, which will make the file or folder visible to visitors.\nRun 'unprotect {part_of_name}' to unprotect any items whose name match the letters in the curly braces.\nRun 'unprotect {n}' command to unprotect the nth item from the protected items.For example, to unprotect 3rd item from protected items run 'unprotect 3' command.\nRun 'unprotect {m} {n} {p}' command to unprotect the mth, nth and pth item from protected items.For example to unprotect 1st, 2nd and 3rd item from protected items run 'unprotect 1 2 3'.In this way, you can unprotect as much items you want.\nRun 'unprotect {m}-{n}' to unprotect from mth to nth item from protected items.For example, to unprotect 3rd to 10th items from protected items run 'unprotect 3-10' command.",
+    "select": """Run 'select {item}' command to select any item, here {item} can be any file or folder.\nRun 'select all' command to select everything in your current working directory.
+Selecting the most flexible feature of this programme. You can specify some conditions and items meeting all conditions will be selected. Here are the conditions and rules of specifying them:
+time:
+prefix: 'tm:' / 'time:'
+format: 'tm:{time(now/today/yesterday/'DD-MM-YYYY HH:MM:SS')}'
+description: this take the items who were modified or created at a specific time.
+examples:
+=>'tm:now' will take all the items who were created or modified at this second.
+=>'tm:today' will take all the items who were created or modified today.
+=>'tm:yesterday' will take all the items who were created or modified yesterday.
+=>'tm:07-04-2018' will take all the items who were created or modified on 7 April 2018.
+=>'tm:27-06-2018 16:30' will take all the items who were created or modified on 27 June 2018 4:30 pm.
+
+time limit:
+prefix: 'in:'
+format: 'in:{amount of time}{unit('y' for year, 'm' for month, 'w' for week, 'd' for day, 'h' for hour, 'min' for minute, 's' for second)}'
+description: this condition checks if a file was modified or created before a certain amout of time. 
+examples:
+=>'in:1w' will match the items which were modifed of creation in last 1 week.
+=>'in:2m' will match any item(file or folder) which was created or modified in last 2 months.
+=>'in:15min' will match any item(file or folder) which was created or modified in last 15 minutes.
+
+time limit (items between 2 specific times):
+prefix: 'tm:' / 'time:'
+format: 'tm:{time1(now/today/yesterday/'DD-MM-YYYY HH:MM:SS')}-{time2(now/today/yesterday/'DD-MM-YYYY HH:MM:SS')}'
+description: this condition will match any items(files or folders) which were modified between {time1} and {time2}.note that in hour minute and seconds are optional if any or both of the times are specified in 'DD-MM-YYYY HH:MM:SS' format.
+examples:
+=>'tm:yesterday-now' will match all items which were created or modified between yesterday 12:00 am and now.
+=>'tm:today-now' will match all items which were created or modified between today 12:00 am and now.
+=>'tm:10-12-2020-now' will match all items which were created or modified between 10 December 2020 12:00 am and now.
+=>'tm:10-12-2020-now' will match all items which were created or modified between 10 December 2020 12:00 am and now.
+=>'tm:03-07-2020-29-06-2020' will match all items which were created or modified between 3 July 2020 12:00 am and 29 June 2020 12:00 am.
+=>'tm:10-01-2020 17:15-29-01-2020' will match all items which were created or modified between 10 January 2020 5:15 pm and 29 January 2020 12:00 am.
+=>'tm:03-02-2020 10:00-28-02-2020 14:00' will match all items which were created or modified between 3 February 2020 10:00 am and 28 February 2020 2:00 pm.
+
+item:
+prefix: 'i:' / 'item:'
+formats: 'i:{n}', 'i:{m} {n} {o}...', 'i:{m}-{n}'
+description: '{n}' will match the nth item of current working directory. '{m} {n} {o}...' will match mth, nth, oth, ... items of current working directory. '{m}-{n}' will match from mth to nth items in current working directory.
+examples:
+=>'i:5' will match the 5th item of current working directory.
+=>'i:2 6 12 16' will match 2nd, 6th, 12th and 16th items of current working directory.
+=>'i:13-20' will match 13th, 14th, 15th, 16th, 17th, 19th and 20th items in current working directory.
+
+size:
+prefix: 's:' / 'size:'
+format: 's:{size}'
+description: this condition matches the files of specific size.
+examples:
+=>'s:45kb' will match all items (files or folderss) of 45kb size.
+=>'s:562mb' will match all items which's size are 562mb.
+=>'s:2.5gb' will match all items which's size are 2.5gb.
+
+size limit:
+prefix: 's:" / 'size:'
+format: 's:{minimum size}-{maximum size}'
+description: this condition will match all files which sizes are between {minimum size} and {maximum size}
+examples:
+=>'s:5mb-10mb' will match any files which's size is more than or equal to 5mb and less than or equal to 10mbl
+
+type:
+prefix: 'tp:' / 'type:'
+format: 'tp:{extension}/image/photo/audio/video/file/folder/directory'
+description: this condition matches items of specific type.
+examples:
+=>'tp:image' or 'tp:photo' will match all the images in current working directory.
+=>'tp:audio' will match all the audios in current working directory.
+=>'tp:video' will match all the videos in current working directory.
+=>'tp:.pdf' will match all files with .pdf extensions in current working directory.
+=>'tp:file' will match any kind of file (except folders) in current working directory.
+=>'tp:folder' or 'tp:dir' or 'tp:directory' will match all folders (except files) in current working directory.
+
+amout of items to take:
+prefix: 't:' / 'take:'
+formats: 't:f-{n}', 't:l-{n}', 't:{k}-{n}'
+description: this condition specifies how many items to take and from where to take.
+examples:
+=>'t:f-15' will take only the first 15 items.
+=>'t:l-10' will take only the last items.
+=>'t:5-10' this will separate the items in some groups, each group will have 10 members and the 5th group will be taken.
+
+consideration limit:
+prefix: 'cons' / 'consider'
+format: 'cons:{n}', 'cons:{m} {n} {o}...', 'cons:{m}-{n}'
+description: this condition will specify which items will be considered for selection
+examples:
+=>'cons:5' will make only the 5th item of current working directory considered for selection.
+=>'cons:2 6 12 16' will make only 2nd, 6th, 12th and 16th items of current working directory considered for selection.
+=>'cons:13-20' will make only 13th, 14th, 15th, 16th, 17th, 19th and 20th items in current working directory considered for selection.
+
+ingore (with 'ign:' prefix):
+prefix: 'ign:' / 'ignore:'
+format: 'ign: {condition}'
+description: this will remove the items which meet {conditions} from consideration list. Here {condition} can be one or more conditions from above.
+examples:
+=>'ignore: tm:today tp:.py' will remove the items who meet 'tm:today' and 'tp:.py' from consideration list.
+You can mix up one or multiple conditions to get your desired items selected. If more than one condition is provided then only those items will be selected who meet all the conditions.
+Selecting will help you to share multiple items at once.""",
+    "unselect": "Run 'unselect {item}' to unselect any of the items you selected, here {items} will be the file or folder to unselect.You can also run 'unselect all' command to unselect all the items you selected.\nRun 'unselect {n}' command to unselect the nth item from the selected items.For example, to unselect 3rd item from selected items run 'unselect 3' command.\nRun 'unselect {m} {n} {p}' command to unselect the mth, nth and pth item from selected items.For example to unselect 1st, 2nd and 3rd item from selected items run 'unselect 1 2 3'.In this way, you can unselect as much items you want.\nRun 'unselect {m}-{n}' to unselect from mth to nth item from selected items.For example, to unselect 3rd to 10th items from selected items run 'unselect 3-10' command.",
+    "search": """Run 'search {condition}' start search from current working directory (in Android phone this will search the whole phone!) with {conditions}.\nRun 'search {condition} in {folder}' start search from {folder} with {conditions}.{conditions} is described below:
+time:
+prefix: 'tm:' / 'time:'
+format: 'tm:{time(now/today/yesterday/'DD-MM-YYYY HH:MM:SS')}'
+description: this take the items who were modified or created at a specific time.
+examples:
+=>'tm:now' will take all the items who were created or modified at this second.
+=>'tm:today' will take all the items who were created or modified today.
+=>'tm:yesterday' will take all the items who were created or modified yesterday.
+=>'tm:07-04-2018' will take all the items who were created or modified on 7 April 2018.
+=>'tm:27-06-2018 16:30' will take all the items who were created or modified on 27 June 2018 4:30 pm.
+
+time limit:
+prefix: 'in:'
+format: 'in:{amount of time}{unit('y' for year, 'm' for month, 'w' for week, 'd' for day, 'h' for hour, 'min' for minute, 's' for second)}'
+description: this condition checks if a file was modified or created before a certain amout of time. 
+examples:
+=>'in:1w' will match the items which were modifed of creation in last 1 week.
+=>'in:2m' will match any item(file or folder) which was created or modified in last 2 months.
+=>'in:15min' will match any item(file or folder) which was created or modified in last 15 minutes.
+
+time limit (items between 2 specific times):
+prefix: 'tm:' / 'time:'
+format: 'tm:{time1(now/today/yesterday/'DD-MM-YYYY HH:MM:SS')}-{time2(now/today/yesterday/'DD-MM-YYYY HH:MM:SS')}'
+description: this condition will match any items(files or folders) which were modified between {time1} and {time2}.note that in hour minute and seconds are optional if any or both of the times are specified in 'DD-MM-YYYY HH:MM:SS' format.
+examples:
+=>'tm:yesterday-now' will match all items which were created or modified between yesterday 12:00 am and now.
+=>'tm:today-now' will match all items which were created or modified between today 12:00 am and now.
+=>'tm:10-12-2020-now' will match all items which were created or modified between 10 December 2020 12:00 am and now.
+=>'tm:10-12-2020-now' will match all items which were created or modified between 10 December 2020 12:00 am and now.
+=>'tm:03-07-2020-29-06-2020' will match all items which were created or modified between 3 July 2020 12:00 am and 29 June 2020 12:00 am.
+=>'tm:10-01-2020 17:15-29-01-2020' will match all items which were created or modified between 10 January 2020 5:15 pm and 29 January 2020 12:00 am.
+=>'tm:03-02-2020 10:00-28-02-2020 14:00' will match all items which were created or modified between 3 February 2020 10:00 am and 28 February 2020 2:00 pm.
+
+item:
+prefix: 'i:' / 'item:'
+formats: 'i:{n}', 'i:{m} {n} {o}...', 'i:{m}-{n}'
+description: '{n}' will match the nth item of current working directory. '{m} {n} {o}...' will match mth, nth, oth, ... items of current working directory. '{m}-{n}' will match from mth to nth items in current working directory.
+examples:
+=>'i:5' will match the 5th item of current working directory.
+=>'i:2 6 12 16' will match 2nd, 6th, 12th and 16th items of current working directory.
+=>'i:13-20' will match 13th, 14th, 15th, 16th, 17th, 19th and 20th items in current working directory.
+
+size:
+prefix: 's:' / 'size:'
+format: 's:{size}'
+description: this condition matches the files of specific size.
+examples:
+=>'s:45kb' will match all items (files or folderss) of 45kb size.
+=>'s:562mb' will match all items which's size are 562mb.
+=>'s:2.5gb' will match all items which's size are 2.5gb.
+
+size limit:
+prefix: 's:" / 'size:'
+format: 's:{minimum size}-{maximum size}'
+description: this condition will match all files which sizes are between {minimum size} and {maximum size}
+examples:
+=>'s:5mb-10mb' will match any files which's size is more than or equal to 5mb and less than or equal to 10mbl
+
+type:
+prefix: 'tp:' / 'type:'
+format: 'tp:{extension}/image/photo/audio/video/file/folder/directory'
+description: this condition matches items of specific type.
+examples:
+=>'tp:image' or 'tp:photo' will match all the images in current working directory.
+=>'tp:audio' will match all the audios in current working directory.
+=>'tp:video' will match all the videos in current working directory.
+=>'tp:.pdf' will match all files with .pdf extensions in current working directory.
+=>'tp:file' will match any kind of file (except folders) in current working directory.
+=>'tp:folder' or 'tp:dir' or 'tp:directory' will match all folders (except files) in current working directory.
+
+amout of items to take:
+prefix: 't:' / 'take:'
+formats: 't:f-{n}', 't:l-{n}', 't:{k}-{n}'
+description: this condition specifies how many items to take and from where to take.
+examples:
+=>'t:f-15' will take only the first 15 items.
+=>'t:l-10' will take only the last items.
+=>'t:5-10' this will separate the items in some groups, each group will have 10 members and the 5th group will be taken.
+
+consideration limit:
+prefix: 'cons' / 'consider'
+format: 'cons:{n}', 'cons:{m} {n} {o}...', 'cons:{m}-{n}'
+description: this condition will specify which items will be considered for selection
+examples:
+=>'cons:5' will make only the 5th item of current working directory considered for selection.
+=>'cons:2 6 12 16' will make only 2nd, 6th, 12th and 16th items of current working directory considered for selection.
+=>'cons:13-20' will make only 13th, 14th, 15th, 16th, 17th, 19th and 20th items in current working directory considered for selection.
+
+ingore (with 'ign:' prefix):
+prefix: 'ign:' / 'ignore:'
+format: 'ign: {condition}'
+description: this will remove the items which meet {conditions} from consideration list. Here {condition} can be one or more conditions from above.
+examples:
+=>'ignore: tm:today tp:.py' will remove the items who meet 'tm:today' and 'tp:.py' from consideration list.\
+You can mix up one or multiple conditions to get your desired items selected. If more than one condition is provided then only those items will be selected who meet all the conditions.
+search traverse a directory and will get all the files meeting contidions selected.
+""",
+    "protect": "Run 'protect {item}' command to hide any file or folder from visitors, here {item} can be name or path of a file or folder.\nRun 'protect {n}' command to protect the nth item of your current working directory.For example, to protect 3rd item of your current working directory run 'protect 3' command.\nRun 'protect {m} {n} {p}' command to protect the mth, nth and pth item of your current working directory.For example to protect 1st, 2nd and 3rd item of your current working directory run 'protect 1 2 3'.In this way, you can protect as much item you want.\nRun 'protect {m}-{n}' to protect from mth to nth item of your current working directory.For example, to protect 3rd to 10th items in your current working directory run 'protect 3-10' command.\nRun 'protect selected' command to hide the selected from visitors.\nRun 'protect all' command to protect everything in your current working directory.\nProtected items are hidden from visitors, this feature is for protecting users' privacy.",
+    "unprotect": "Run 'unprotect {item}' command remove a file or folder from the list of protected items, which will make the file or folder visible to visitors.\nRun 'unprotect {n}' command to unprotect the nth item from the protected items.For example, to unprotect 3rd item from protected items run 'unprotect 3' command.\nRun 'unprotect {m} {n} {p}' command to unprotect the mth, nth and pth item from protected items.For example to unprotect 1st, 2nd and 3rd item from protected items run 'unprotect 1 2 3'.In this way, you can unprotect as much items you want.\nRun 'unprotect {m}-{n}' to unprotect from mth to nth item from protected items.For example, to unprotect 3rd to 10th items from protected items run 'unprotect 3-10' command.",
     "view": "This command helps you to view several informations about the Zone you are in right now, visitors, your current state and some records.\nRun 'view status' command to see current status, this will give you informations about your first use of this programme, Zone info if you are in any Zone, name of the visitors visiting your device and also some interesting records.\nRun 'view members' to see informations about the members of the Zone.\nRun 'view selected' command to see the list of items you selected.\nRun 'view protected' command to see which items are hidden from visitors.\nRun 'view visitors' to get informations about visitors who are visiting your device right now.\nRun 'view history' command to see Zone ID, name of host and time of last join of all Zones you have joined.\nRun 'view commands' command to the list of runnable commands and their valid formats.",
     "chat": "Run 'chat {message}' to send messages accross the Zone, {message} will be sent to all members in the Zone.",
     "zone info": "Run 'zone info' command to get informations the Zone you are in right now.",
@@ -51,11 +245,11 @@ formats = {
     "ls": "ls",
     "cd": "cd {directory}",
     "dirmap": "dirmap, dirmap {directory}",
-    "select": "select {item}, select all, select {n}, select {m}-{n} select {m} {n}.., select {part_of_name}",
-    "unselect": "unselect {item}, unselect all, unselect {n}, unselect {m}-{n}, unselect {m} {n}.., unselect {part_of_name}",
-    "search": "search {keyword}",
-    "protect": "protect {item}, protect all, protect selected, protect {n}, protect {m}-{n}, protect {m} {n}.., protect {part_of_name}",
-    "unprotect": "unprotect {item}, unprotect all, unprotect {n}, unprotect {m}-{n}, unprotect {m} {n}.., unprotect {part_of_name}",
+    "select": "select {item}, select all, select tm:({time}/{start_time}-{end_time}) s:({size}/{max_size}-{min_size}) i:({m}/{m}, {n}, {o}.../{m}-{n}) cons:({m}-{n}/{m},{n},{o}.../{m}) tp:({extention}/video/audio/image/photo/file/folder/dir/directory) t:(f-{n}/l-{n}/{k}-{n}) (\"{keyword}\"/{keyword[no space]}) ignore:{conditions}",
+    "unselect": "unselect {item}, unselect all, unselect tm:({time}/{start_time}-{end_time}) s:({size}/{max_size}-{min_size}) i:({m}/{m}, {n}, {o}.../{m}-{n}) cons:({m}-{n}/{m},{n},{o}.../{m}) tp:({extention}/video/audio/image/photo/file/folder/dir/directory) t:(f-{n}/l-{n}/{k}-{n}) (\"{keyword}\"/{keyword[no space]}) ignore:{conditions}",
+    "search": "search tm:({time}/{start_time}-{end_time}) s:({size}/{max_size}-{min_size}) i:({m}/{m}, {n}, {o}.../{m}-{n}) cons:({m}-{n}/{m},{n},{o}.../{m}) tp:({extention}/video/audio/image/photo/file/folder/dir/directory) t:(f-{n}/l-{n}/{k}-{n}) (\"{keyword}\"/{keyword[no space]}) ignore:{conditions}, search tm:({time}/{start_time}-{end_time}) s:({size}/{max_size}-{min_size}) i:({m}/{m}, {n}, {o}.../{m}-{n}) cons:({m}-{n}/{m},{n},{o}.../{m}) tp:({extention}/video/audio/image/photo/file/folder/dir/directory) t:(f-{n}/l-{n}/{k}-{n}) (\"{keyword}\"/{keyword[no space]}) ignore:{conditions}",
+    "protect": "protect {item}, protect all, protect selected",
+    "unprotect": "unprotect {item}, unprotect all, unprotect selected",
     "username": "username, username {new name}",
     "start": "start",
     "join": "join {Zone ID}",
@@ -111,4 +305,4 @@ def help(topic=None):
 
 
 #name: helps.py
-#updated: 1610601868
+#updated: 1610903782

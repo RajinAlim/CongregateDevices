@@ -9,6 +9,72 @@ from socket import gethostname
 from socket import gethostbyname
 
 
+all_patterns = (
+    re.compile(r"(?P<cmd>\bhow)\s*?(?P<subcmd>to)\s*(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bshare)\s*?(?P<subcmd>this)"),
+    re.compile(r"(?P<cmd>\bshare)\s*?(?P<subcmd>status)"),
+    re.compile(r"(?P<cmd>\bzone)\s*?(?P<subcmd>info)"),
+    re.compile(r"(?P<cmd>\bshare)\s+?(?P<arg>.+)\s+?(?P<subcmd>with)\s+?(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>\bshare)\s+?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bview)\s+?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bcollect)\s+?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bcancel)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\busername)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bvisit)\s+?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bselect)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bunselect)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bprotect)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bunprotect)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bchat)\s(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bthrow)\s*?(?P<arg>.+)?"),
+    re.compile(r"(?P<cmd>\bkick)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bhelp)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bhelp\b)"),
+    re.compile(r"(?P<cmd>\bcd)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bhome)\s+?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bhome\b)"),
+    re.compile(r"(?P<cmd>\bpwd\b)"),
+    re.compile(r"(?P<cmd>\bdirmap)\s*?(?P<arg>.+)?"),
+    re.compile(r"(?P<cmd>\bls\b)"),
+    re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)in\s*(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\breturn\b)"),
+    re.compile(r"(?P<cmd>\babout\b)"),
+    re.compile(r"(?P<cmd>\bleave\b)"),
+    re.compile(r"(?P<cmd>\bclose\b)"),
+    re.compile(r"(?P<cmd>\bexit\b)"),
+    re.compile(r"(?P<cmd>\busername\b)"),
+    re.compile(r"(?P<cmd>\bstart\b)"),
+    re.compile(r"(?P<cmd>\bclear\b)"),
+    re.compile(r"(?P<cmd>\bjoin\b)\s*?(?P<arg>[\w\d]{3} [\w\d]{4} [\w\d]{4})"),
+)
+now = datetime.datetime.now()
+today = datetime.datetime.strptime(now.strftime("%d-%m-%Y"), "%d-%m-%Y")
+time_pat = re.compile(r"""
+\b(?:tm|time):(?P<time1>(:?now|today|yesterday|\d{2}\s*[./-]\s*\d{2}\s*[./-]\s*\d{2,4})
+(?:\s+\d{2}(?:\s*:\s*\d{2}(?:\s*:\s*\d{2})?)?)?
+)
+(?:
+\s*-\s*
+(?P<time2>(:?now|today|yesterday|\d{2}\s*[./-]\s*\d{2}\s*[./-]\s*\d{2,4})
+(?:\s+\d{2}(?:\s*:\s*\d{2}(?:\s*:\s*\d{2})?)?)?
+)
+)?\b
+""", re.VERBOSE) #tm:(now|today|yesterday|dd-mm-yyyy (hh:mm:ss)?)(-now|today|yesterday|dd-mm-yyyy (hh:mm:ss)?)? #5
+timelimit_pat = re.compile(r"\bin:(\d+)([YyMmWwDdHhSs]|min|Min|MIN)\b") #in:{n}[yYmMdYHhsS]|min|Min|MIN #8
+item_pat = re.compile(r"\b(?:i|item):(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #(i|item):n|m,n,o...|m-p #7
+kw_pat1 = re.compile(r"\b('.+?'|\".+?\")\b") #'...'|".." #1
+kw_pat2 = re.compile(r"([^\s\n\t]+)") #..... #10
+range_pat = re.compile(r"\bcons(?:ider)?:(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #cons:(m-p|m, n, o, p) #3
+takeonly_pat = re.compile(r"\b(?:tp|type):(photo|image|audio|video|\.[\d\w_]|file|folder|dir)(?:ectory)?\b") #type:photo|image|audio|video|file|folder|dir|{extention} #6
+count_pat = re.compile(r"\b(?:t|take):(f|l|\d+)?-(\d+)\b") #t:f-n|-n|l-n|m-n #6
+ignore_pat = re.compile(r"\b(?:ign|ignore):(.+)$") #ignore:.....$ #2
+size_pat = re.compile(r"\b(?:s|size):(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?)(?:\s*-\s*(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?))?") #s:{n}b|kb|mb|gb|-{n}b|kb|mb|gb| #9
+
+image_ext = ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "raw", "webp", "tif")
+video_ext = ("mp4", "3gp", "ogg", "wmv", "webm", "flv")
+audio_ext = ("m4a", "mp3", "flac", "wav", "wma", "aac")
+
 def decimal(num: str, base: int=2):
     
     dec = 0
@@ -107,6 +173,15 @@ def pretify_time(seconds):
     as_str = as_str + 's' if seconds > 1 else as_str
     return as_str
 
+def total_size(path):
+    if os.path.isfile(path):
+        return os.path.getsize(path)
+    size = 0
+    for f in list(traverse_dir(path)):
+        if os.path.isfile(f):
+            size += os.path.getsize(f)
+    return size
+
 def pretify(m):
     
     try:
@@ -122,6 +197,16 @@ def pretify(m):
             break
     return f"{round(m, 2) if not m.is_integer() else int(m)} {measures[i]}"
 
+def real_size(size):
+    pat = r"(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|B|KB|MB|GB)"
+    match = re.search(pat, size)
+    if match:
+        n, unit = match.groups()
+        n = float(n)
+        unit = unit.lower()
+        to_multiply = {'b': 1, "kb": 1024, "mb": (1024 * 1024), "gb": 1024 * 1024 * 1024}
+        return n * to_multiply.get(unit, 1)
+
 def pretify_path(path):
     if path.startswith("/storage"):
         if "/storage/emulated/0" in path:
@@ -129,6 +214,40 @@ def pretify_path(path):
         else:
             path = os.path.join("SD Card", *split_path(path)[3:])
     return path
+
+def real_path(f):
+    if "internal storage" in f.lower() or "sd card" in f.lower():
+        folders = split_path(f)
+        if "internal storage" in f.lower():
+            i = [folder.lower() for folder in folders].index("internal storage")
+            folders.pop(i)
+            folders.insert(0, "0")
+            folders.insert(0, "emulated")
+            folders.insert(0, "/storage")
+            path = os.path.join(*folders)
+            logger.debug(path)
+            if os.path.exists(path):
+                return path
+        elif "sd card" in f.lower():
+            try:
+                cwd = os.getcwd()
+                while os.getcwd() != "/storage":
+                    os.chdir("..")
+                dirs = os.listdir()
+                dirs.remove("emulated")
+                dirs.remove("self")
+                if dirs:
+                    sd_card = dirs[0]
+                    i = [folder.lower() for folder in folders].index("sd card")
+                    folders.pop(i)
+                    folders.insert(0, sd_card)
+                    folders.insert(0, "/storage")
+                    path = os.path.join(*folders)
+                    logger.debug(path)
+                    if os.path.exists(path):
+                        return path
+            except Exception as exc:
+                logger.error(exc)
 
 def split_path(path):
     
@@ -210,49 +329,10 @@ def parse_dirmap(dirmap: str):
     return paths
 
 def parse_command(cmd_str):
-    
-    all_patterns = (
-        r"(?P<cmd>\bhow)\s*?(?P<subcmd>to)\s*(?P<arg>.+)",
-        r"(?P<cmd>\bshare)\s*?(?P<subcmd>this)",
-        r"(?P<cmd>\bshare)\s*?(?P<subcmd>status)",
-        r"(?P<cmd>\bzone)\s*?(?P<subcmd>info)",
-        r"(?P<cmd>\bshare)\s+?(?P<arg>.+)\s+?(?P<subcmd>with)\s+?(?P<subarg>.+)",
-        r"(?P<cmd>\bshare)\s+?(?P<arg>.+)",
-        r"(?P<cmd>\bview)\s+?(?P<arg>.+)",
-        r"(?P<cmd>\bcollect)\s+?(?P<arg>.+)",
-        r"(?P<cmd>\bcancel)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\busername)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bvisit)\s+?(?P<arg>.+)",
-        r"(?P<cmd>\bselect)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bunselect)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bprotect)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bunprotect)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bchat)\s(?P<arg>.+)",
-        r"(?P<cmd>\bthrow)\s*?(?P<arg>.+)?",
-        r"(?P<cmd>\bkick)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bhelp)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bhelp\b)",
-        r"(?P<cmd>\bcd)\s*?(?P<arg>.+)",
-        r"(?P<cmd>\bhome)\s+?(?P<arg>.+)",
-        r"(?P<cmd>\bhome\b)",
-        r"(?P<cmd>\bpwd\b)",
-        r"(?P<cmd>\bdirmap)\s*?(?P<arg>.+)?",
-        r"(?P<cmd>\bls\b)",
-        r"(?P<cmd>\bsearch)\s*(?P<arg>.+)",
-        r"(?P<cmd>\breturn\b)",
-        r"(?P<cmd>\babout\b)",
-        r"(?P<cmd>\bleave\b)",
-        r"(?P<cmd>\bclose\b)",
-        r"(?P<cmd>\bexit\b)",
-        r"(?P<cmd>\busername\b)",
-        r"(?P<cmd>\bstart\b)",
-        r"(?P<cmd>\bclear\b)",
-        r"(?P<cmd>\bjoin\b)\s*?(?P<arg>[\w\d]{3} [\w\d]{4} [\w\d]{4})",
-    )
     command = ''
     args = []
     for pattern in all_patterns:
-        match = re.fullmatch(pattern, cmd_str, re.I | re.DOTALL)
+        match = pattern.fullmatch(cmd_str)
         if match:
             groups = match.groups()
             command = match.group("cmd")
@@ -278,81 +358,219 @@ def parse_command(cmd_str):
     return (None, [])
 
 def flexible_select(f, items=None, return_exact=False):
-    if "internal storage" in f.lower() or "sd card" in f.lower():
-        folders = split_path(f)
-        if "internal storage" in f.lower():
-            i = [folder.lower() for folder in folders].index("internal storage")
-            folders.pop(i)
-            folders.insert(0, "0")
-            folders.insert(0, "emulated")
-            folders.insert(0, "/storage")
-            path = os.path.join(*folders)
-            logger.debug(path)
-            if os.path.exists(path):
-                return [path]
-        elif "sd card" in f.lower():
-            try:
-                cwd = os.getcwd()
-                while os.getcwd() != "/storage":
-                    os.chdir("..")
-                dirs = os.listdir()
-                dirs.remove("emulated")
-                dirs.remove("self")
-                if dirs:
-                    sd_card = dirs[0]
-                    i = [folder.lower() for folder in folders].index("sd card")
-                    folders.pop(i)
-                    folders.insert(0, sd_card)
-                    folders.insert(0, "/storage")
-                    path = os.path.join(*folders)
-                    logger.debug(path)
-                    if os.path.exists(path):
-                        return [path]
-            except Exception as exc:
-                logger.debug(exc)
-    if items is None:
-        items = os.listdir()
-    files = []
-    total_items = len(items)
-    if f.isdigit():
-        n = int(f)
-        if n - 1 < total_items:
-            file = items[n - 1]
-            if return_exact:
-                files.append(file)
-            else:
-                files.append(os.path.abspath(file))
-    elif all(str.isdigit(n) for n in map(str.strip, f.split())):
-        nums = map(lambda n: int(str.strip(n)), f.split())
-        for n in nums:
-            if n - 1 < total_items:
-                if return_exact:
-                    files.append(items[n - 1])
-                else:
-                    abspath = os.path.abspath(items[n - 1])
-                    files.append(abspath)
-    elif re.search(r"\d+\s*-\s*\d+", f):
-        match = re.search(r"(\d+)\s*-\s*(\d+)", f)
-        n, m = match.group(1), match.group(2)
-        n, m = int(n), int(m)
-        for i in range(n, m + 1):
-            if i - 1 < total_items:
-                file = items[i - 1]
-                if return_exact:
-                    files.append(file)
-                else:
-                    files.append(os.path.abspath(file))
+    if return_exact:
+        items = os.listdir() if items is None else items.copy()
     else:
+        items = [os.path.abspath(item) for item in os.listdir()] if items is None else items.copy()
+    not_to_take = set()
+    match = kw_pat1.search(f)
+    f = kw_pat1.sub("", f)
+    if match is not None:
+        kw = match.group(1)[1:-1]
+        logger.warning(("quoted keyword", kw, f))
+        pat = re.compile(kw)
         for item in items:
-            if f in item:
-                if return_exact:
-                    if f not in os.path.basename(item):
-                        continue
-                    files.append(item)
-                else:
-                    files.append(os.path.abspath(item))
-    return files
-
+            if pat.search(os.path.basename) is None:
+                not_to_take.add(item)
+    ignore = ignore_pat.search(f)
+    f = ignore_pat.sub("", f)
+    if ignore is not None:
+        logger.warning(("ignore", ignore.group(1), f))
+        for item in flexible_select(ignore.group(1), items):
+            if item in items:
+                items.remove(item)
+    match = range_pat.search(f)
+    f = range_pat.sub("", f)
+    if match is not None:
+        f_str = match.group(1)
+        logger.warning(("consider", f_str, f))
+        targets = list(map(int, re.findall(r"(\d+)", f_str)))
+        logger.warning(targets)
+        if re.fullmatch(r"\d+\s*-\s*\d+", f_str):
+            targets = list(range(targets[0], targets[1] + 1))
+        items = [items[i] for i in targets]
+    takeonly = takeonly_pat.search(f)
+    f = takeonly_pat.sub("", f)
+    takeonly = takeonly.group(1) if takeonly is not None else None
+    for item in items:
+        if takeonly is None:
+            continue
+        if takeonly == "file":
+            if not os.path.isfile(item):
+                not_to_take.add(item)
+        elif takeonly in ("folder", "dir") and not os.path.isdir(item):
+            not_to_take.add(item)
+        else:
+            ext = os.path.splitext(item)[1][1:].strip()
+            logger.warning(ext)
+            if takeonly.startswith("."):
+                if not (ext == takeonly[1:].strip()):
+                    logger.warning(item)
+                    not_to_take.add(item)
+            elif takeonly in ("image", "photo") and ext not in image_ext:
+                not_to_take.add(item)
+                logger.warning(("photo", item))
+            elif takeonly == "audio" and ext not in audio_ext:
+                not_to_take.add(item)
+                logger.warning(("audio", item))
+            elif takeonly == "video" and ext not in video_ext:
+                not_to_take.add(item)
+                logger.warning(("video", item))
+    for item in not_to_take:
+        if item in items:
+            items.remove(item)
+    match = time_pat.search(f)
+    f = time_pat.sub("", f)
+    if match:
+        times = match.groupdict()
+        logger.warning(("time", match.group(), f))
+        start, end = times['time1'], times['time2']
+        if start == "now":
+            start = now.timestamp()
+            if end is None:
+                limit = 1
+        elif start == "today":
+            start = today.timestamp()
+            if end is None:
+                limit = 86400
+        elif start == "yesterday":
+            start = today.timestamp() - 86400
+            if end is None:
+                limit = 86400
+        else:
+            pat = r"(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{1,4})(?:\s+(\d{1,2})(?:\s*:\s*(\d{1,2})(?:\s*:\s*(\d{1,2}))?)?)?"
+            date = re.search(pat, match.group(0))
+            if date is None:
+                start = 0
+            else:
+                timetuple = list(date.groups())
+                limit = 60 if timetuple[5] is None else None
+                limit = 3600 if timetuple[4] is None else limit
+                limit = 86400 if timetuple[3] is None else limit
+                limit = 1 if limit is None else limit
+                for i in range(len(timetuple)):
+                    if timetuple[i] is None:
+                        timetuple[i] = "00"
+                prettydate = "{}-{}-{} {}:{}:{}".format(*timetuple)
+                fmt = "%d-%m-%Y %H:%M:%S" if len(timetuple[2]) > 2 else "%d-%m-%y %H:%M:%S"
+                start = datetime.datetime.strptime(prettydate, fmt).timestamp()
+                logger.warning("start " + prettydate)
+        if end is None:
+            end = start + limit
+        elif end == "now":
+            end = now.timestamp()
+        elif end == "today":
+            end = today.timestamp()
+        elif end == "yesterday":
+            end = today.timestamp() - 86400
+        elif type(end) is not float:
+            pat = r"(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{1,4})(?:\s+(\d{1,2})(?:\s*:\s*(\d{1,2})(?:\s*:\s*(\d{1,2}))?)?)?"
+            date = re.search(pat, match.group(0))
+            if date is None:
+                end = datetime.datetime.now().timestamp()
+            else:
+                timetuple = list(date.groups())
+                for i in range(len(timetuple)):
+                    if timetuple[i] is None:
+                        timetuple[i] = "00"
+                prettydate = "{}-{}-{} {}:{}:{}".format(*timetuple)
+                fmt = "%d-%m-%Y %H:%M:%S" if len(timetuple[2]) > 2 else "%d-%m-%y %H:%M:%S"
+                end = datetime.datetime.strptime(prettydate, fmt).timestamp()
+                logger.warning("end " + prettydate)
+        if start is not None and end is not None:
+            logger.warning((start, end))
+            for item in items:
+                stat = os.stat(item)
+                ctime, mtime = stat.st_ctime, stat.st_mtime
+                remove = True
+                if start <= ctime and ctime <= end:
+                    remove = False
+                if start <= mtime and mtime <= end:
+                    remove = False
+                if remove:
+                    not_to_take.add(item)
+    take = count_pat.search(f)
+    f = count_pat.sub(" ", f)
+    take = take.groups() if take is not None else None
+    logger.warning(("take", take, f))
+    match = item_pat.search(f)
+    f = item_pat.sub("", f)
+    if match is not None:
+        f_str = match.group(1)
+        logger.warning(("items", f_str, f))
+        targets = list(map(int, re.findall(r"(\d+)", f_str)))
+        logger.warning(targets)
+        if re.fullmatch(r"\d+\s*-\s*\d+", f_str):
+            targets = list(range(targets[0], targets[1] + 1))
+        for i in range(len(items)):
+            if (i + 1) not in targets:
+                not_to_take.add(items[i])
+    match = timelimit_pat.search(f)
+    f = timelimit_pat.sub("", f)
+    if match:
+        logger.warning(("timelimit", match.group(), f))
+        time_intervals = {'y': (86400 * 365), 'm': (86400 * 30), 'w': 86400 * 7, 'd': 86400, 'h': 3600, 'min': 60, 's': 1}
+        param = match.group(2).lower()
+        coefficient = int(match.group(1))
+        max_interval = coefficient * time_intervals[param]
+        logger.warning(("max_interval", max_interval))
+        for item in items:
+            stat = os.stat(item)
+            if abs(stat.st_ctime - now.timestamp()) > max_interval and abs(stat.st_mtime - now.timestamp()) > max_interval:
+                not_to_take.add(item)
+    match = size_pat.search(f)
+    f = size_pat.sub("", f)
+    if match:
+        logger.warning(match.group())
+        min_, max_ = match.groups()
+        p_min = "." in min_
+        min_ = real_size(min_)
+        logger.warning(min_)
+        if max_ is not None:
+            max_ = real_size(max_)
+            logger.warning(max_)
+        else:
+            p = int(math.log(min_, 1024))
+            p = 3 if p > 3 else p
+            if p_min:
+                max_ = min_ + math.pow(10, p)
+            else:
+                max_ = min_ + math.pow(1024, p)
+        logger.warning((min_, max_))
+        for item in items:
+            size = total_size(item)
+            if min_ <= size and size <= max_:
+                continue
+            not_to_take.add(item)
+    match = kw_pat2.search(f)
+    f = kw_pat2.sub("", f)
+    if match is not None and match.group(1) != "all":
+        pat = re.compile(match.group(1))
+        logger.warning(("keyword", match.group(1), f))
+        for item in items:
+            if pat.search(os.path.basename(item)) is None:
+                not_to_take.add(item)
+    for item in not_to_take:
+        if item in items:
+            items.remove(item)
+    if take is not None:
+        from_ = take[0]
+        if from_ == "l":
+            from_ = len(items) - int(take[1])
+            to = len(items)
+        elif from_ == "f" or from_ is None:
+            from_ = 0
+            to = int(take[1])
+        else:
+            n = int(take[1])
+            if n == 0:
+                return []
+            from_ = (n * (int(take[0]) - 1))
+            to = int(take[0]) * n
+        logger.warning(("taking", from_, to, len(items)))
+        items = items[from_ : to]
+    return items
+    
 class Message:
     
     def __init__(self, content, headers={}):
@@ -445,4 +663,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1610601868
+#updated: 1610903828

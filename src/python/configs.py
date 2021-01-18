@@ -16,7 +16,6 @@ debug_handler.setFormatter(formatter)
 debug_handler.setLevel(logging.DEBUG)
 logger.addHandler(debug_handler)
 
-
 PROMPT = "# >> "
 FILLCHAR = '-' 
 INFO_DELIMITER = "=" 
@@ -32,7 +31,7 @@ BODY_SIZE = 2048
 DECREASE = BODY_SIZE // 16 
 BUFFER_SIZE = BODY_SIZE + HEADER_SIZE
 ABOUT = """Project: Congregate Devices.
-Last Updated Thursday, 14 January 2021, 03:51 PM
+Last Updated Sunday, 17 January 2021, 11:17 PM
 About Author:
     Name: Rajin Alim.
     Age: 17 (at the time of doing this project)
@@ -41,7 +40,7 @@ About Author:
     Facebook: www.facebook.com/rajinalim.ra7118
     Gmail: rajin7118@gmail.com
 Words from author: \"The purpose of this project is same as it's name, to Congregate multiple devices, to share files and folders among them.This project was done by a learner, so it is not usual to face errors.In case you face any error, please contact me.And also, consider leaving a review through my gmail.I would love to hear from you.Enjoy yourself, live your life, chase your dreams, take care of your dear ones, keep me in your prayers.\""""
-ESSSENTIAL_KEYS = ['name', 'joined', 'protected', 'history', 'total_time', 'joined_n', 'hosted_n', 'total_sent', 'total_received', 'data_path', 'total_commands', 'invalid_commands', 'home_dir', 'project_dir', 'sending_sessions', 'receiving_sessions', "command_records"]
+ESSSENTIAL_KEYS = ['name', 'joined', 'protected', 'history', 'total_time', 'joined_n', 'hosted_n', 'total_sent', 'total_received', 'data_path', 'total_commands', 'invalid_commands', 'home_dir', 'project_dir', 'sending_sessions', 'receiving_sessions', "command_records", "times_launched"]
 ALL_COMMANDS = ['pwd', 'ls', 'cd', 'dirmap', 'select', 'unselect', 'search', 'protect', 'unprotect', 'username', 'start', 'join', 'chat', 'visit', 'return', 'share', 'share with', 'collect', 'cancel', 'view', 'share status', 'kick', 'throw', 'clear', 'leave', 'close', 'help', 'share this', 'how to', 'about', 'exit']
 
 joined = False 
@@ -91,6 +90,7 @@ if any(key not in data for key in ESSSENTIAL_KEYS):
     data['joined_n'] = 0 if 'joined_n' not in data else data['joined_n']
     data['hosted_n'] = 0 if 'hosted_n' not in data else data['hosted_n']
     data['total_sent'] = 0 if 'total_sent' not in data else data['total_sent']
+    data['times_launched'] = 0 if 'times_launched' not in data else data['times_launched']
     data['total_received'] = 0 if 'total_received' not in data else data['total_received']
     data['total_commands'] = 0 if 'total_commands' not in data else data['total_commands']
     data['invalid_commands'] = 0 if 'invalid_commands' not in data else data['invalid_commands']
@@ -127,4 +127,4 @@ os.chdir(data['home_dir'])
 
 
 #name: configs.py
-#updated: 1610601868
+#updated: 1610897273

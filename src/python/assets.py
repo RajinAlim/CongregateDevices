@@ -35,7 +35,8 @@ service_running = False
 cancelled = [] 
 zone_host = '' 
 targeted_receiver = -1 
-clients = [] 
+clients = []
+members = 0
 
 def get_ip():
     
@@ -164,6 +165,14 @@ def handle_requests():
                 reply[maps[member].intro['name']] = maps[member].intro['joined']
             reply = parsers.Message.info(reply, {'type': "response", "topic": "members", "status": "200"})
             client.messages.put(reply)
+        elif topic == "share" and not req.get_headers("target")[0]:
+            sender_name = client.intro['name']
+            if zone_info['members'][0] == sender_name:
+                req.header["target"] = zone_info['members'][1]
+            elif zone_info['members'][1] == sender_name:
+                req.header["target"] = zone_info['members'][0]
+            requests.put((client, req))
+            continue
         elif topic == "share" and req.get_headers("target")[0] == "all":
             send_news(req, client)
             i = len(share_replies)
@@ -341,7 +350,7 @@ def manage_client(client, ip):
         logger.info(msg)
         return 
     clients.append(client)
-    msg = parsers.Message(zone_info['zone_host'], {"type": "str"})
+    msg = parsers.Message(zone_info['zone_host'], {"type": "str", "members": len(zone_info['members'])})
     client.send(msg)
     logger.info(configs.min_ip)
     configs.min_ip = parsers.min_ip(configs.min_ip, ip)
@@ -355,7 +364,7 @@ def manage_client(client, ip):
     t = threading.Thread(target=receive_message, args=(client,))
     t.daemon = True
     t.start()
-    send_news(f"{client.intro['name']} has joined the zone", not_to=client, send_self=False)
+    send_news(f"{client.intro['name']} has joined the Zone.", not_to=client, send_self=False)
     while configs.running and client.is_active:
         msg = client.received_msg.get()
         if not msg:
@@ -567,7 +576,7 @@ def public_receive(addr,sender_name):
     
 
 def manage_communication(client):
-    global zone_closed
+    global zone_closed, members
     while configs.running or not zone_closed:
         msg = client.received_msg.get()
         if not msg:
@@ -581,6 +590,8 @@ def manage_communication(client):
             logger.info(cancelled)
             continue
         elif type_ == "news":
+            if "has joined the Zone." in msg.content:
+                members += 1
             if msg.content == zone_host + " has left the Zone.":
                 zone_closed = True
                 continue
@@ -910,7 +921,7 @@ class Receiver:
                     os.makedirs(dirname, exist_ok=True)
                 if f[-1] not in "/\\":
                     self.status['records'][f] = [0, 1, False]
-                    self.abspaths[f] = os.path.join(configs.data['home_dir'], f)
+                    self.abspaths[f] = os.path.abspath(f)
                     self.files.append(f)
                     with open(f, "wb") as fl:
                         pass
@@ -943,6 +954,7 @@ class Receiver:
             infos = msg.get_headers("filename", "filesize", "chunks", "chunk", "sent size", "sent", "completed")
             if any(info is None for info in infos):
                 logger.error(msg)
+                continue
             file, self.received_size, self.completed = infos[0], int(infos[4]), int(infos[-1])
             if os.sep != "\\" and "\\" in file:
                 file = file.replace("\\", "/")
@@ -976,7 +988,9 @@ class Receiver:
             if file in not_to_take:
                 continue
             with open(self.abspaths[file], "ab") as f:
+                logger.error(("chunks, chunk:", infos[2], infos[3]))
                 f.write(msg.content)
+                logger.error("Received size " + str(self.status["received size"]))
             if infos[2] == infos[3]:
                 configs.data['total_received'] += int(infos[1])
                 self.status["completed"] += 1
@@ -1002,4 +1016,4 @@ class Receiver:
 
 
 #name: assets.py
-#updated: 1610604354
+#updated: 1610891629

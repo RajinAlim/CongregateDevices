@@ -122,6 +122,7 @@ def join(server_id, controlled=False):
     t.start()
     configs.informed = False
     assets.zone_host = msg
+    assets.members = int(first_msg.get_headers("members")[0])
     configs.joined = True
     if msg == configs.data["name"]:
         msg = "You"
@@ -193,6 +194,7 @@ def leave(confirm=False):
     assets.cancelled.clear()
     assets.zone_host = ''
     assets.targeted_receiver = None
+    assets.members = 0
     if configs.server_id:
         close(True)
     return "Left from Zone."
@@ -298,6 +300,8 @@ def share(stuffs):
     stuffs = stuffs.strip()
     if not configs.running:
         return "You must be in a Zone to share."
+    if assets.members == 2:
+        return share_with(stuffs, "")
     if any(sender.sender.is_active for sender in assets.senders) or any(receiver.receiver.is_active for receiver in assets.receivers):
         return "Cannot start another session of public share while one is running.Please wait for that session to finish."
     if configs.server_id and len(assets.zone_info.get(  "members", [])) == 1:
@@ -490,7 +494,7 @@ def ls(visitor='', for_programme=False):
     return '\n'.join(items)
 
 def cd(dr, visitor=''):
-    dr = dr.strip()
+    dr = parsers.real_path(dr.strip())
     if visitor:
         cwd = os.getcwd()
         if assets.visitors_data[visitor]['wd']:
@@ -498,6 +502,7 @@ def cd(dr, visitor=''):
         if os.path.exists(dr):
             if os.path.abspath(dr) not in configs.data['protected']:
                 assets.visitors_data[visitor]['wd'] = os.path.abspath(dr)
+                return "Current working directory: " + parsers.pretify_path(os.path.abspath(dr))
             else:
                 while "../" in dr:
                     dr = dr.replace("../", "")
@@ -532,18 +537,6 @@ def cd(dr, visitor=''):
                     assets.visitors_data[visitor]['wd'] = dirs[0]
                     os.chdir(cwd)
                     return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
-            os.chdir(cwd)
-            return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
-        else:
-            items = parsers.flexible_select(dr)
-            while items and not os.path.isdir(items[0]):
-                items.pop(0)
-            if items:
-                assets.visitors_data[visitor]['wd'] = items[0]
-                os.chdir(cwd)
-                return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
-            os.chdir(cwd)
-            return "No such directory."
     if os.path.exists(dr):
         abspath = os.path.abspath(dr)
         os.chdir(dr)
@@ -551,13 +544,6 @@ def cd(dr, visitor=''):
     if dr == "home":
         os.chdir(configs.data['home_dir'])
         return "Current Working directory: " + parsers.pretify_path(os.getcwd())
-    items = parsers.flexible_select(dr)
-    while items and not os.path.isdir(items[0]):
-        items.pop(0)
-    if items:
-        dr = items[0]
-        os.chdir(dr)
-        return "Current Working directory: " + parsers.pretify_path(dr)
     return "No such directory"
 
 def dirmap(dr=None, visitor=''):
@@ -597,7 +583,10 @@ def select(f, visitor=''):
             os.chdir(cwd)
             return f"{len(os.listdir())} items selected."
         else:
-            items = parsers.flexible_select(f)
+            try:
+                items = parsers.flexible_select(f)
+            except:
+                items = []
             for item in items:
                 if item in assets.visitors_data[visitor]['selected'] and item in configs.data['protected'] :
                     continue
@@ -605,6 +594,9 @@ def select(f, visitor=''):
             if items:
                 os.chdir(cwd)
                 return ", ".join(map(os.path.basename, items)) + " has been selected."
+            else:
+                os.chdir(cwd)
+                return "No item matched the condition(s)."
         os.chdir(cwd)
         return "No such file or directory."
     if os.path.exists(f):
@@ -621,15 +613,19 @@ def select(f, visitor=''):
             configs.selected.append(abs_path)
         return f"{len(items)} items has been selected."
     else:
-        items = parsers.flexible_select(f)
+        try:
+            items = parsers.flexible_select(f)
+        except:
+            items = []
         if items:
             for item in items:
                 if item in configs.selected:
                     continue
                 configs.selected.append(item)
-            if len(items) == 1:
-                return 'Selected ' + os.path.basename(items[0])
-            return str(len(items)) + " items has been selectd."
+            if len(items) < 4:
+                return ", ".join(map(os.path.basename, items)) + " has been selected."
+            elif len(items) > 4:
+                return str(len(items)) + " items has been selected."
         return "No such file or directory."
 
 def unselect(f, visitor=''):
@@ -646,7 +642,10 @@ def unselect(f, visitor=''):
             os.chdir(cwd)
             return ""
         else:
-            items = parsers.flexible_select(f, assets.visitors_data[visitor]['selected'], return_exact=True)
+            try:
+                items = parsers.flexible_select("i:" + f, assets.visitors_data[visitor]['selected'], return_exact=True)
+            except:
+                items = []
             for item in items:
                 if item in assets.visitors_data[visitor]['selected']:
                     assets.visitors_data[visitor]['selected'].remove(item)
@@ -660,24 +659,52 @@ def unselect(f, visitor=''):
     if abspath in configs.selected:
         configs.selected.remove(abspath)
     else:
-        items = parsers.flexible_select(f, items=configs.selected, return_exact=True)
+        try:
+            items = parsers.flexible_select("i:" + f, items=configs.selected, return_exact=True)
+        except:
+            items = []
         for item in items:
             configs.selected.remove(item)
-        if items:
+        if len(items) < 4:
             return ", ".join(map(os.path.basename, items)) + " has been unselected."
+        elif len(items) > 4:
+            return str(len(items)) + " items has been unselected."
     return ""
 
-def search(f):
-    if os.path.exists("/storage"):
-        print("Searching the whole phone...might take a while....")
-        items = parsers.flexible_select(f, list(parsers.traverse_dir("/storage")), True)
+def search(f, location=None):
+    if location is not None:
+        if not os.path.isdir(location):
+            return "No such directory."
+        try:
+            items = parsers.flexible_select(f, list(parsers.traverse_dir(location)), True)
+        except:
+            items = []
         configs.selected.extend(items)
-        if items and len(items) <= 6:
+        if items and len(items) <= 4:
             return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
         else:
             return str(len(items)) + " items have been selected. View them by running 'view selected' command and unselect unwanted items manually."
         return "No such item found."
-    return "search is only available in Android phones."
+    if os.path.exists("/storage"):
+        location = "/storage"
+        print("Searching the whole phone...might take a while....")
+        try:
+            items = parsers.flexible_select(f, list(parsers.traverse_dir(location)) + list(parsers.traverse_dir("/storage/emulated/0")), True)
+        except:
+            items = []
+        configs.selected.extend(items)
+    else:
+        location = os.getcwd()
+        try:
+            items = parsers.flexible_select(f, list(parsers.traverse_dir(location)), True)
+        except:
+            items = []
+        configs.selected.extend(items)
+    if items and len(items) <= 4:
+        return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
+    else:
+        return str(len(items)) + " items have been selected. View them by running 'view selected' command and unselect unwanted items manually."
+    return "No such item found."
 
 def protect(item):
     item = item.strip()
@@ -693,13 +720,17 @@ def protect(item):
                 if abs_path not in configs.data['protected']:
                     configs.data['protected'].append(abs_path)
             return f"{len(os.listdir())} items has been added to protected items' list."
-        items = parsers.flexible_select(item)
-        if items:
-            for item in items:
-                if item in configs.data['protected']:
-                    continue
+        try:
+            items = parsers.flexible_select("i:" + item)
+        except:
+            items = []
+        for item in items:
+            if item not in configs.data['protected']:
                 configs.data['protected'].append(item)
+        if len(items) < 4:
             return ", ".join(map(os.path.basename, items)) + " has been added to protected items' list."
+        elif len(items) > 4:
+            return str(len(items)) + " items has been added to protected items' list"
         return "No such file or directory."
     abspath = os.path.abspath(item)
     if abspath not in configs.data['protected']:
@@ -711,14 +742,25 @@ def unprotect(item):
     if item == "all":
         configs.data['protected'].clear()
         return "Cleared protected items' list."
+    if item == "selected":
+        for file in configs.selected:
+            if file in configs.data['protected']:
+                configs.data['protected'].remove(file)
+        return str(len(configs.selected)) + " item(s) has been removed from protected items' list"
+    try:
+        items = parsers.flexible_select("i:" + item, configs.data['protected'], True)
+    except:
+        items = []
+    for item in items:
+        if item in configs.data['protected']:
+            configs.data['protected'].remove(item)
+    if len(items) < 4:
+        return ", ".join(map(os.path.basename, items)) + " has been removed from protected items' list."
+    elif len(items) > 4:
+        return str(len(items)) + " items has been removed from protected items' list"
     abspath = os.path.abspath(item)
     if abspath in configs.data['protected']:
         configs.data['protected'].remove(abspath)
-    else:
-        items = parsers.flexible_select(item, configs.data['protected'], return_exact=True)
-        for item in items:
-            configs.data['protected'].remove(item)
-        return str(len(items)) + " items has been removed from protected items' list."
     return item + " has been removed from protected items."
 
 def view(topic, visitor=''):
@@ -814,6 +856,7 @@ def view(topic, visitor=''):
                 output_str.append(f"Number of running receiving sessions(including the completed ones): {len(assets.receivers)}")
         output_str.append("\nRecords:")
         output_str.append(f"Total time spent in using this programme: {parsers.pretify_time(configs.data['total_time'])}.")
+        output_str.append(f"Number of times this programme was launched/run: {configs.data['times_launched']}")
         joined, hosted = configs.data['joined_n'], configs.data['hosted_n']
         output_str.append(f"Number of joined Zones: {joined}.")
         output_str.append(f"Number of hosted Zones: {hosted}")
@@ -1306,8 +1349,9 @@ def execute(cmd):
                 return '', [], []
     if kicked:
         leave(True)
+    logger.info(threading.active_count())
     return output, news, chats
 
 
 #name: executor.py
-#updated: 1610600573
+#updated: 1610897580

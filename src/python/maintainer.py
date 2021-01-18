@@ -18,14 +18,14 @@ github_maintainer_link = "https://github.com/RajinAlim/CongregateDevices/blob/ma
 github_link = lambda path: f"https://github.com/RajinAlim/CongregateDevices/blob/main/{path}"
 
 update_history = {
-    "src/python/assets.py": 1610604354,
-    "src/python/configs.py": 1610601868,
-    "src/python/executor.py": 1610600573,
-    "src/python/helps.py": 1610601868,
-    "src/python/parsers.py": 1610601868,
-    "src/python/maintainer.py": 1610613304,
-    "main.py": 1610601871,
-    "README.txt": 1610556103,
+    "src/python/assets.py": 1610891629,
+    "src/python/configs.py": 1610897273,
+    "src/python/executor.py": 1610897580,
+    "src/python/helps.py": 1610903782,
+    "src/python/parsers.py": 1610903828,
+    "src/python/maintainer.py": 1610818035,
+    "main.py": 1610819697,
+    "README.txt": 1610818034,
     "clear_data": []
 }
 
@@ -323,4 +323,4 @@ if __name__ =="__main__":
 
 
 #name: maintainer.py
-#updated: 1610613304
+#updated: 1610818035
