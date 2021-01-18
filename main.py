@@ -128,6 +128,7 @@ if available_updates:
 
 time_track = time.time()
 warned = False
+configs.data["times_launched"] += 1
 while True:
     if configs.visiting:
         prompt = "(in " + configs.visiting  + "'s device) "  + configs.PROMPT
