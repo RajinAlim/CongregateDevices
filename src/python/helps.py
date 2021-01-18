@@ -90,6 +90,11 @@ examples:
 =>'tp:file' will match any kind of file (except folders) in current working directory.
 =>'tp:folder' or 'tp:dir' or 'tp:directory' will match all folders (except files) in current working directory.
 
+keyword:
+prefix: (No prefix, any condition without prefix is recognised as keyword)
+formats: {keyword(no space)}, "{anything}", '{anything}'
+description: any condition without prefix is recognised as keyword. any text inside single or double quote is also recognised as keyword. all items who contain the keyword in their name will be takes. keyword can be also regular expressions, any items whose name contains match of the regular expressions will be taken (ignore this line if you don’t know about regular expression).
+
 amout of items to take:
 prefix: 't:' / 'take:'
 formats: 't:f-{n}', 't:l-{n}', 't:{k}-{n}'
@@ -187,6 +192,11 @@ examples:
 =>'tp:.pdf' will match all files with .pdf extensions in current working directory.
 =>'tp:file' will match any kind of file (except folders) in current working directory.
 =>'tp:folder' or 'tp:dir' or 'tp:directory' will match all folders (except files) in current working directory.
+
+keyword:
+prefix: (No prefix, any condition without prefix is recognised as keyword)
+formats: {keyword(no space)}, "{anything}", '{anything}'
+description: any condition without prefix is recognised as keyword. any text inside single or double quote is also recognised as keyword. all items who contain the keyword in their name will be takes. keyword can be also regular expressions, any items whose name contains match of the regular expressions will be taken (ignore this line if you don’t know about regular expression).
 
 amout of items to take:
 prefix: 't:' / 'take:'
