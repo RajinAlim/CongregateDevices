@@ -444,18 +444,50 @@ def flexible_select(f, items=None, return_exact=False):
         times = match.groupdict()
         logger.warning(("time", match.group(), f))
         start, end = times['time1'], times['time2']
-        if start == "now":
+        if "now" in start:
             start = now.timestamp()
             if end is None:
-                limit = 1
-        elif start == "today":
+                end = start + 1
+        elif "today" in start:
+            m = re.search(r"(\d{2})(?::(\d{2})(?::(\d{2}))?)?", start)
+            logger.warning(m)
+            extras = 0
+            limit = 86400
+            if m:
+                h, m, s = m.groups()
+                if h is not None:
+                    extras += int(h) * 3600
+                    limit = 3600
+                if m is not None:
+                    extras += int(m) * 60
+                    limit = 60
+                if s is not None:
+                    extras += int(s)
+                    limit = 1
+            logger.warning(extras)
             start = today.timestamp()
+            start = start + extras
             if end is None:
-                limit = 86400
-        elif start == "yesterday":
+                end = start + limit
+        elif "yesterday" in start:
+            m = re.search(r"(\d{2})(?::(\d{2})(?::(\d{2}))?)?", start)
+            extras = 0
+            limit = 86400
+            if m:
+                h, m, s = m.groups()
+                if h is not None:
+                    extras += int(h) * 3600
+                    limit = 3600
+                if m is not None:
+                    extras += int(m) * 60
+                    limit = 60
+                if s is not None:
+                    extras += int(s)
+                    limit = 1
             start = today.timestamp() - 86400
+            start += extras
             if end is None:
-                limit = 86400
+                end = start + limit
         else:
             pat = r"(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{1,4})(?:\s+(\d{1,2})(?:\s*:\s*(\d{1,2})(?:\s*:\s*(\d{1,2}))?)?)?"
             date = re.search(pat, match.group(0))
@@ -473,15 +505,35 @@ def flexible_select(f, items=None, return_exact=False):
                 prettydate = "{}-{}-{} {}:{}:{}".format(*timetuple)
                 fmt = "%d-%m-%Y %H:%M:%S" if len(timetuple[2]) > 2 else "%d-%m-%y %H:%M:%S"
                 start = datetime.datetime.strptime(prettydate, fmt).timestamp()
-                logger.warning("start " + prettydate)
-        if end is None:
-            end = start + limit
-        elif end == "now":
+        logger.warning("start " + datetime.datetime.fromtimestamp(start).strftime("%d-%m-%Y %H:%M:%S"))
+        if type(end) is float:
+            pass
+        elif "now" in end:
             end = now.timestamp()
-        elif end == "today":
-            end = today.timestamp()
-        elif end == "yesterday":
-            end = today.timestamp() - 86400
+        elif "today" in end:
+            m = re.search(r"(\d{2})(?::(\d{2})(?::(\d{2}))?)?", end)
+            extras = 0
+            if m:
+                h, m, s = m.groups()
+                if h is not None:
+                    extras += int(h) * 3600
+                if m is not None:
+                    extras += int(m) * 60
+                if s is not None:
+                    extras += int(s)
+            end = today.timestamp() + 86399 - extras
+        elif "yesterday" in end:
+            m = re.search(r"(\d{2})(?::(\d{2})(?::(\d{2}))?)?", end)
+            extras = 0
+            if m:
+                h, m, s = m.groups()
+                if h is not None:
+                    extras += int(h) * 3600
+                if m is not None:
+                    extras += int(m) * 60
+                if s is not None:
+                    extras += int(s)
+            end = today.timestamp() - 1 - extras
         elif type(end) is not float:
             pat = r"(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{1,4})(?:\s+(\d{1,2})(?:\s*:\s*(\d{1,2})(?:\s*:\s*(\d{1,2}))?)?)?"
             date = re.search(pat, match.group(0))
@@ -495,7 +547,7 @@ def flexible_select(f, items=None, return_exact=False):
                 prettydate = "{}-{}-{} {}:{}:{}".format(*timetuple)
                 fmt = "%d-%m-%Y %H:%M:%S" if len(timetuple[2]) > 2 else "%d-%m-%y %H:%M:%S"
                 end = datetime.datetime.strptime(prettydate, fmt).timestamp()
-                logger.warning("end " + prettydate)
+        logger.warning("end " + datetime.datetime.fromtimestamp(end).strftime("%d-%m-%Y %H:%M:%S"))
         if start is not None and end is not None:
             logger.warning((start, end))
             for item in items:
@@ -507,6 +559,7 @@ def flexible_select(f, items=None, return_exact=False):
                 if start <= mtime and mtime <= end:
                     remove = False
                 if remove:
+                    logger.warning((item, ctime, mtime))
                     not_to_take.add(item)
     take = count_pat.search(f)
     f = count_pat.sub(" ", f)
@@ -684,4 +737,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1610972384
+#updated: 1610981458
