@@ -10,18 +10,10 @@ from socket import gethostbyname
 try:
     from functools import cache
 except ImportError:
-    class cache:
-        
-        def __init__(self, func):
-            self.func = func
-            self.caches = {}
-        
-        def __call__(self, *args, **kwargs):
-            if args in self.caches:
-                return self.caches[args]
-            return_value = self.func(*args, **kwargs)
-            self.caches[args] = return_value
-            return return_value
+    def cache(f):
+        def inner(*args, **kwargs):
+            return f(*args, **kwargs)
+        return f
 
 all_patterns = (
     re.compile(r"(?P<cmd>\bhow)\s*?(?P<subcmd>to)\s*(?P<arg>.+)"),
@@ -50,7 +42,7 @@ all_patterns = (
     re.compile(r"(?P<cmd>\bpwd\b)"),
     re.compile(r"(?P<cmd>\bdirmap)\s*?(?P<arg>.+)?"),
     re.compile(r"(?P<cmd>\bls\b)"),
-    re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)in\s*(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)in(?:\s|[^:])+(?P<subarg>.+)"),
     re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\breturn\b)"),
     re.compile(r"(?P<cmd>\babout\b)"),
@@ -80,7 +72,7 @@ item_pat = re.compile(r"\b(?:i|item):(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #(i|i
 kw_pat1 = re.compile(r"\b('.+?'|\".+?\")\b") #'...'|".." #1
 kw_pat2 = re.compile(r"([^\s\n\t]+)") #..... #10
 range_pat = re.compile(r"\bcons(?:ider)?:(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #cons:(m-p|m, n, o, p) #3
-takeonly_pat = re.compile(r"\b(?:tp|type):(photo|image|audio|video|\.[\d\w_]|file|folder|dir)(?:ectory)?\b") #type:photo|image|audio|video|file|folder|dir|{extention} #6
+takeonly_pat = re.compile(r"\b(?:tp|type):(photo|image|audio|video|\.[\d\w_]+|file|folder|dir)(?:ectory)?\b") #type:photo|image|audio|video|file|folder|dir|{extention} #6
 count_pat = re.compile(r"\b(?:t|take):(f|l|\d+)?-(\d+)\b") #t:f-n|-n|l-n|m-n #6
 ignore_pat = re.compile(r"\b(?:ign|ignore):(.+)$") #ignore:.....$ #2
 size_pat = re.compile(r"\b(?:s|size):(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?)(?:\s*-\s*(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?))?") #s:{n}b|kb|mb|gb|-{n}b|kb|mb|gb| #9
@@ -290,7 +282,6 @@ def split_path(path):
     paths.reverse()
     return paths
 
-@cache
 def traverse_dir(path: str, depth=-1):
     def gen(path, depth):
         prev_wd = os.getcwd()
@@ -387,7 +378,6 @@ def parse_command(cmd_str):
             return (command, args)
     return (None, [])
 
-@cache
 def flexible_select(f, items=None, return_exact=False):
     if return_exact:
         items = os.listdir() if items is None else items.copy()
