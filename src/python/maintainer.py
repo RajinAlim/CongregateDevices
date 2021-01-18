@@ -20,9 +20,9 @@ github_link = lambda path: f"https://github.com/RajinAlim/CongregateDevices/blob
 update_history = {
     "src/python/assets.py": 1610891629,
     "src/python/configs.py": 1610897273,
-    "src/python/executor.py": 1610897580,
+    "src/python/executor.py": 1610943545,
     "src/python/helps.py": 1610903782,
-    "src/python/parsers.py": 1610903828,
+    "src/python/parsers.py": 1610943344,
     "src/python/maintainer.py": 1610818035,
     "main.py": 1610819697,
     "README.txt": 1610818034,
