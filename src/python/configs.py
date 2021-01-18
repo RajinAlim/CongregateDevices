@@ -31,7 +31,7 @@ BODY_SIZE = 2048
 DECREASE = BODY_SIZE // 16 
 BUFFER_SIZE = BODY_SIZE + HEADER_SIZE
 ABOUT = """Project: Congregate Devices.
-Last Updated Sunday, 17 January 2021, 11:17 PM
+Last Updated Monday, 18 January 2021, 11:47 AM
 About Author:
     Name: Rajin Alim.
     Age: 17 (at the time of doing this project)

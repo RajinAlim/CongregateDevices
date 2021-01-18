@@ -678,7 +678,7 @@ def unselect(f, visitor=''):
             return ""
         else:
             try:
-                items = parsers.flexible_select("i:" + f, assets.visitors_data[visitor]['selected'], return_exact=True)
+                items = parsers.flexible_select("i:" + f, assets.visitors_data[visitor]['selected'], True)
             except:
                 items = []
             for item in items:
@@ -703,7 +703,7 @@ def unselect(f, visitor=''):
         configs.selected.remove(abspath)
     else:
         try:
-            items = parsers.flexible_select("i:" + f, items=configs.selected, return_exact=True)
+            items = parsers.flexible_select("i:" + f, configs.selected, True)
         except:
             items = []
         for item in items:
@@ -719,7 +719,7 @@ def search(f, location=None):
         if not os.path.isdir(location):
             return "No such directory."
         try:
-            items = parsers.flexible_select(f, list(parsers.traverse_dir(location)), True)
+            items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
         except:
             items = []
         configs.selected.extend(items)
@@ -732,14 +732,14 @@ def search(f, location=None):
         location = "/storage"
         print("Searching the whole phone...might take a while....")
         try:
-            items = parsers.flexible_select(f, list(parsers.traverse_dir(location)) + list(parsers.traverse_dir("/storage/emulated/0")), True)
+            items = parsers.flexible_select(f, parsers.traverse_dir(location) + parsers.traverse_dir("/storage/emulated/0"), True)
         except:
             items = []
         configs.selected.extend(items)
     else:
         location = os.getcwd()
         try:
-            items = parsers.flexible_select(f, list(parsers.traverse_dir(location)), True)
+            items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
         except:
             items = []
         configs.selected.extend(items)
@@ -1397,4 +1397,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1610943545
+#updated: 1610948630
