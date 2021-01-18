@@ -480,6 +480,7 @@ def pwd(visitor=''):
 def ls(visitor='', for_programme=False):
     if visitor:
         cwd = os.getcwd()
+        assets.lock.acquire()
         os.chdir(assets.visitors_data[visitor]['wd'])
     items = []
     for i, f in enumerate(os.listdir()):
@@ -489,19 +490,33 @@ def ls(visitor='', for_programme=False):
             items.append(f"{i + 1}.(file) {f}")
         elif os.path.isdir(f):
             items.append(f"{i + 1}.(folder) {f}")
+        items.append(f"size: {parsers.pretify(parsers.total_size(os.path.abspath(f)))}, last modified on {datetime.datetime.fromtimestamp(os.stat(f).st_mtime).strftime('%d %B %Y %I:%M:%S %p')}")
     if visitor:
         os.chdir(cwd)
+        assets.lock.release()
     return '\n'.join(items)
 
 def cd(dr, visitor=''):
     dr = parsers.real_path(dr.strip())
     if visitor:
         cwd = os.getcwd()
+        assets.lock.acquire()
         if assets.visitors_data[visitor]['wd']:
             os.chdir(assets.visitors_data[visitor]['wd'])
+        if not os.path.exists(dr):
+            items = parsers.flexible_select("i:" + dr)
+            while items and not os.path.isdir(items[0]):
+                items.pop(0)
+            if items:
+                assets.visitors_data[visitor]['wd'] = items[0]
+                os.chdir(cwd)
+                assets.lock.release()
+                return "Current working directory: " + parsers.pretify_path(items[0])
         if os.path.exists(dr):
             if os.path.abspath(dr) not in configs.data['protected']:
                 assets.visitors_data[visitor]['wd'] = os.path.abspath(dr)
+                os.chdir(cwd)
+                assets.lock.release()
                 return "Current working directory: " + parsers.pretify_path(os.path.abspath(dr))
             else:
                 while "../" in dr:
@@ -510,6 +525,7 @@ def cd(dr, visitor=''):
                     dr = dr.replace("..\\", "")
                 if dr and assets.visitors_data[visitor]['wd']:
                     os.chdir(cwd)
+                    assets.lock.release()
                     return "No such directory."
                 try:
                     wd = dr
@@ -519,6 +535,7 @@ def cd(dr, visitor=''):
                         os.listdir()
                     assets.visitors_data[visitor]['wd'] = wd
                     os.chdir(cwd)
+                    assets.lock.release()
                     return "Current working directory: " + parsers.pretify_path(wd)
                 except Exception as exc:
                     pass
@@ -533,9 +550,11 @@ def cd(dr, visitor=''):
                             os.chdir("../")
                     except:
                         os.chdir(cwd)
+                        assets.lock.release()
                         return "Unable to change directory."
                     assets.visitors_data[visitor]['wd'] = dirs[0]
                     os.chdir(cwd)
+                    assets.lock.release()
                     return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
     if os.path.exists(dr):
         abspath = os.path.abspath(dr)
@@ -544,16 +563,24 @@ def cd(dr, visitor=''):
     if dr == "home":
         os.chdir(configs.data['home_dir'])
         return "Current Working directory: " + parsers.pretify_path(os.getcwd())
+    items = parsers.flexible_select("i:" + dr)
+    while items and not os.path.isdir(items[0]):
+        items.pop(0)
+    if items:
+        os.chdir(items[0])
+        return "Current Working directory: " + parsers.pretify_path(os.getcwd())
     return "No such directory"
 
 def dirmap(dr=None, visitor=''):
     if visitor:
         cwd = os.getcwd()
+        assets.lock.acquire()
         os.chdir(assets.visitors_data[visitor]['wd'])
         dr = assets.visitors_data[visitor]['wd'] if dr is None else dr
         dr = dr.strip()
         dirmap = parsers.dirmap(dr, ignore=configs.data['protected'], fillchar="    ")
         os.chdir(cwd)
+        assets.lock.release()
         return dirmap
     else:
         if dr is None:
@@ -568,12 +595,14 @@ def select(f, visitor=''):
     if visitor:
         cwd = os.getcwd()
         os.chdir(assets.visitors_data[visitor]['wd'])
+        assets.lock.acquire()
         if os.path.exists(f):
             abs_path = os.path.abspath(f)
             if abs_path not in configs.data['protected'] and abs_path not in assets.visitors_data[visitor]['selected']:
                 assets.visitors_data[visitor]['selected'].append(abs_path)
                 logger.debug(assets.visitors_data[visitor]['selected'])
                 os.chdir(cwd)
+                assets.lock.release()
                 return f + " has been selected."
         elif f == "all":
             for item in os.listdir():
@@ -581,6 +610,7 @@ def select(f, visitor=''):
                 if item not in assets.visitors_data[visitor]['selected'] and abs_path not in configs.data['protected'] :
                     assets.visitors_data[visitor]['selected'].append(abs_path)
             os.chdir(cwd)
+            assets.lock.release()
             return f"{len(os.listdir())} items selected."
         else:
             try:
@@ -591,13 +621,16 @@ def select(f, visitor=''):
                 if item in assets.visitors_data[visitor]['selected'] and item in configs.data['protected'] :
                     continue
                 assets.visitors_data[visitor]['selected'].append(item)
-            if items:
+            if len(items) >= 4:
                 os.chdir(cwd)
+                assets.lock.release()
                 return ", ".join(map(os.path.basename, items)) + " has been selected."
-            else:
+            if len(items) < 4:
                 os.chdir(cwd)
-                return "No item matched the condition(s)."
+                assets.lock.release()
+                return str(len(items)) + " item(s) has been selected."
         os.chdir(cwd)
+        assets.lock.release()
         return "No such file or directory."
     if os.path.exists(f):
         abs_path = os.path.abspath(f)
@@ -624,7 +657,7 @@ def select(f, visitor=''):
                 configs.selected.append(item)
             if len(items) < 4:
                 return ", ".join(map(os.path.basename, items)) + " has been selected."
-            elif len(items) > 4:
+            elif len(items) >= 4:
                 return str(len(items)) + " items has been selected."
         return "No such file or directory."
 
@@ -634,12 +667,14 @@ def unselect(f, visitor=''):
         if f == "all":
             assets.visitors_data[visitor]['selected'].clear()
             return ""
-        abs_path = os.path.abspath(f)
         cwd = os.getcwd()
         os.chdir(assets.visitors_data[visitor]['wd'])
+        abs_path = os.path.abspath(f)
+        assets.lock.acquire()
         if abs_path in assets.visitors_data[visitor]['selected']:
             assets.visitors_data[visitor]['selected'].remove(abs_path)
             os.chdir(cwd)
+            assets.lock.release()
             return ""
         else:
             try:
@@ -649,8 +684,16 @@ def unselect(f, visitor=''):
             for item in items:
                 if item in assets.visitors_data[visitor]['selected']:
                     assets.visitors_data[visitor]['selected'].remove(item)
-            if items:
-                return str(len(items)) + " items has been unselectd."
+            if len(items) >= 4:
+                os.chdir(cwd)
+                assets.lock.release()
+                return str(len(items)) + " items has been unselected."
+            if len(items) < 4:
+                os.chdir(cwd)
+                assets.lock.release()
+                return ", ".join(items) + " items has been unselected."
+            os.chdir(cwd)
+            assets.lock.release()
             return ''
     if f == "all":
         configs.selected.clear()
@@ -667,7 +710,7 @@ def unselect(f, visitor=''):
             configs.selected.remove(item)
         if len(items) < 4:
             return ", ".join(map(os.path.basename, items)) + " has been unselected."
-        elif len(items) > 4:
+        elif len(items) >= 4:
             return str(len(items)) + " items has been unselected."
     return ""
 
@@ -1354,4 +1397,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1610897580
+#updated: 1610943545

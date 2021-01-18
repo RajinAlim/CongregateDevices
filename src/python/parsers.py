@@ -1,3 +1,4 @@
+import functools
 import math
 import re
 import datetime
@@ -75,6 +76,7 @@ image_ext = ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "raw", "webp", "tif")
 video_ext = ("mp4", "3gp", "ogg", "wmv", "webm", "flv")
 audio_ext = ("m4a", "mp3", "flac", "wav", "wma", "aac")
 
+@functools.cache
 def decimal(num: str, base: int=2):
     
     dec = 0
@@ -90,6 +92,7 @@ def decimal(num: str, base: int=2):
         dec *= -1
     return dec
 
+@functools.cache
 def non_decimal(dec: int, base: int=2):
     
     non_dec = ""
@@ -108,6 +111,7 @@ def non_decimal(dec: int, base: int=2):
         non_dec = "-" + non_dec
     return non_dec
 
+@functools.cache
 def get_id(addr: tuple):
     
     ip, port = addr
@@ -120,7 +124,8 @@ def get_id(addr: tuple):
     digits.insert(8, " ")
     key = "".join(digits)
     return key
-    
+
+@functools.cache
 def get_addr(key: str):
     
     key = key.replace(" ", "").upper()
@@ -133,6 +138,7 @@ def get_addr(key: str):
     ip = ".".join(ip_parts)
     return ip, port
 
+@functools.cache
 def min_ip(ip1, ip2):
     
     if ip1 == ip2:
@@ -150,6 +156,7 @@ def min_ip(ip1, ip2):
             continue
         return ip1 if ip1_part < ip2_part else ip2
 
+@functools.cache
 def pretify_time(seconds):
     
     seconds = int(seconds)
@@ -173,6 +180,7 @@ def pretify_time(seconds):
     as_str = as_str + 's' if seconds > 1 else as_str
     return as_str
 
+@functools.cache
 def total_size(path):
     if os.path.isfile(path):
         return os.path.getsize(path)
@@ -182,6 +190,7 @@ def total_size(path):
             size += os.path.getsize(f)
     return size
 
+@functools.cache
 def pretify(m):
     
     try:
@@ -197,6 +206,7 @@ def pretify(m):
             break
     return f"{round(m, 2) if not m.is_integer() else int(m)} {measures[i]}"
 
+@functools.cache
 def real_size(size):
     pat = r"(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|B|KB|MB|GB)"
     match = re.search(pat, size)
@@ -207,6 +217,7 @@ def real_size(size):
         to_multiply = {'b': 1, "kb": 1024, "mb": (1024 * 1024), "gb": 1024 * 1024 * 1024}
         return n * to_multiply.get(unit, 1)
 
+@functools.cache
 def pretify_path(path):
     if path.startswith("/storage"):
         if "/storage/emulated/0" in path:
@@ -215,6 +226,7 @@ def pretify_path(path):
             path = os.path.join("SD Card", *split_path(path)[3:])
     return path
 
+@functools.cache
 def real_path(f):
     if "internal storage" in f.lower() or "sd card" in f.lower():
         folders = split_path(f)
@@ -248,7 +260,9 @@ def real_path(f):
                         return path
             except Exception as exc:
                 logger.error(exc)
+    return f
 
+@functools.cache
 def split_path(path):
     
     splited = os.path.split(path)
@@ -278,6 +292,7 @@ def traverse_dir(path: str, depth=-1):
             yield from traverse_dir(f, depth - 1)
     os.chdir(prev_wd)
 
+@functools.cache
 def dirmap(dr, level=0, ignore=[], fillchar="\t"):
     
     if not os.path.exists(dr):
@@ -357,6 +372,7 @@ def parse_command(cmd_str):
             return (command, args)
     return (None, [])
 
+@functools.cache
 def flexible_select(f, items=None, return_exact=False):
     if return_exact:
         items = os.listdir() if items is None else items.copy()
@@ -663,4 +679,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1610903828
+#updated: 1610943344
