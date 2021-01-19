@@ -620,7 +620,10 @@ def details(f, visitor=""):
     abspath = os.path.abspath(f)
     size = parsers.total_size(f)
     stat = os.stat(f)
-    details_str += f"Name: {os.path.basename(parsers.pretify_path(f))}\nAbosute path: {abspath}\n"
+    if not os.path.basename(f) or os.path.basename(f).isspace():
+        details_str += f"Name: {parsers.pretify_path(f).replace('/', '')}\nAbosute path: {abspath}\n"
+    else:
+        details_str += f"Name: {os.path.basename(f)}\nAbosute path: {abspath}\n"
     if os.path.isdir(f):
         files = parsers.traverse_dir(f)
         details_str += "Type: Folder\n"
