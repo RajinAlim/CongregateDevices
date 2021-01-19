@@ -15,6 +15,7 @@ from src.python import configs
 from src.python import helps
 from src.python import maintainer
 from src.python.configs import logger
+from src.python.parsers import cache
 
 
 n_cmd = 0
@@ -483,9 +484,11 @@ def ls(visitor='', for_programme=False):
         assets.lock.acquire()
         os.chdir(assets.visitors_data[visitor]['wd'])
     items = []
-    for i, f in enumerate(os.listdir()):
+    i = 0
+    for f in os.listdir():
         if os.path.abspath(f) in configs.data['protected'] and visitor:
             continue
+        i ++ 1
         if os.path.isfile(f):
             items.append(f"{i + 1}.(file) {f}")
         elif os.path.isdir(f):
@@ -498,6 +501,7 @@ def ls(visitor='', for_programme=False):
 
 def cd(dr, visitor=''):
     dr = parsers.real_path(dr.strip())
+    logger.warning(parsers.is_accessable(os.path.abspath(dr)))
     if visitor:
         cwd = os.getcwd()
         assets.lock.acquire()
@@ -505,7 +509,7 @@ def cd(dr, visitor=''):
             os.chdir(assets.visitors_data[visitor]['wd'])
         if not os.path.exists(dr):
             items = parsers.flexible_select("i:" + dr)
-            while items and not os.path.isdir(items[0]):
+            while items and (not os.path.isdir(items[0]) or parsers.is_accessable(items[0])):
                 items.pop(0)
             if items:
                 assets.visitors_data[visitor]['wd'] = items[0]
@@ -513,7 +517,7 @@ def cd(dr, visitor=''):
                 assets.lock.release()
                 return "Current working directory: " + parsers.pretify_path(items[0])
         if os.path.exists(dr):
-            if os.path.abspath(dr) not in configs.data['protected']:
+            if os.path.abspath(dr) not in configs.data['protected'] and parsers.is_accessable(dr):
                 assets.visitors_data[visitor]['wd'] = os.path.abspath(dr)
                 os.chdir(cwd)
                 assets.lock.release()
@@ -529,7 +533,7 @@ def cd(dr, visitor=''):
                     return "No such directory."
                 try:
                     wd = dr
-                    while wd in configs.data["protected"]:
+                    while wd in configs.data["protected"] or not parsers.is_accessable(wd):
                         os.chdir("..")
                         wd = os.getcwd()
                         os.listdir()
@@ -573,6 +577,8 @@ def cd(dr, visitor=''):
 
 def dirmap(dr=None, visitor=''):
     if visitor:
+        if dr and not parsers.is_accessable(dr):
+            return "No such directory."
         cwd = os.getcwd()
         assets.lock.acquire()
         os.chdir(assets.visitors_data[visitor]['wd'])
@@ -590,6 +596,118 @@ def dirmap(dr=None, visitor=''):
     drmap = parsers.dirmap(dr, fillchar="    ")
     return drmap
 
+@cache
+def details(f, visitor=""):
+    f = parsers.real_path(f.strip())
+    details_str = ""
+    if f == "selected":
+        for f in configs.selected:
+            details_str += details(f) + "\n"
+        return details_str
+    if visitor:
+        with lock:
+            cwd = os.getcwd()
+            os.chdir(assets.visitors_data[visitor]['wd'])
+            f = os.path.abspath(f)
+            if not parsers.is_accessable(f):
+                os.chdir(cwd)
+                return "No such file or directory."
+            os.chdir(cwd)
+        return details(f, visitor)
+    if not os.path.exists(f):
+        return "No such file or directory."
+    name = os.path.basename(f)
+    abspath = os.path.abspath(f)
+    size = parsers.total_size(f)
+    stat = os.stat(f)
+    details_str += f"Name: {name}\nAbosute path: {abspath}\n"
+    if os.path.isdir(f):
+        files = parsers.traverse_dir(f)
+        details_str += "Type: Folder\n"
+        details_str += "Total number of containing files: " + str(len(files)) + "\n"
+        if "/storage" in f:
+            details_str += f"Total Size (of accessable parts): {parsers.pretify(size)}\n"
+        else:
+            details_str += f"Total Size: {parsers.pretify(size)}\n"
+        details_str += f"Last Modification date: {parsers.pretify_timestamp(stat.st_mtime)}\nLast Access date: {parsers.pretify_timestamp(stat.st_atime)}\n"
+        individual_type_details = {"image": [0, 0], "audio": [0, 0], "video": [0, 0], "document": [0, 0], "others": [0, 0]}
+        headings = ("Document", "Quantity", "Total Size", "Percentage of size")
+        max_lens = [len(heading) for heading in headings]
+        for file in files:
+            ext = os.path.splitext(file)[1].replace(".", "").strip()
+            if ext in parsers.image_ext:
+                type_ = "image"
+            elif ext in parsers.audio_ext:
+                type_ = "audio"
+            elif ext in parsers.video_ext:
+                type_ = "video"
+            elif ext in parsers.doc_ext:
+                type_ = "document"
+            else:
+                type_ = "others"
+            individual_type_details[type_][0] += 1
+            individual_type_details[type_][1] += os.path.getsize(file)
+        if files:
+            strs = []
+            for type_ in individual_type_details:
+                p = round((individual_type_details[type_][1] / size) * 100, 2)
+                i = 3
+                while p == 0.0 and individual_type_details[type_][1]:
+                    p = round((individual_type_details[type_][1] / size) * 100, i)
+                    i += 1
+                q = str(individual_type_details[type_][0]).center(max_lens[1])
+                s = str(parsers.pretify(individual_type_details[type_][1])).center(max_lens[2])
+                p = (str(p) + '%').center(max_lens[3])
+                max_lens[0] = max(len(type_), max_lens[0])
+                max_lens[1] = max(len(q), max_lens[1])
+                max_lens[2] = max(len(s), max_lens[2])
+                max_lens[3] = max(len(p), max_lens[3])
+                type_ = type_.center(max_lens[0])
+                strs.append(f"{type_.title()} - {q} - {s} - {p}")
+            headings = ("Type".center(max_lens[0]), "Quantity".center(max_lens[0]), "Total Size".center(max_lens[0]), "Percentage of size".center(max_lens[0]))
+            details_str += "\nStatistics of Individual Types:\n"
+            details_str += " - ".join(headings) + "\n"
+            details_str += "   ".join(["-" * i for i in max_lens]) + "\n"
+            details_str += "\n".join(strs) + "\n"
+        individual_ext_details = collections.defaultdict(lambda : [0, 0])
+        headings = ("Extension", "Quantity", "Total Size", "Percentage of size")
+        max_lens = [len(heading) for heading in headings]
+        for file in files:
+            ext = os.path.splitext(file)[1].replace(".", "").strip()
+            data = individual_ext_details[ext]
+            data[0] += 1
+            data[1] += os.path.getsize(file)
+        if individual_ext_details:
+            strs = []
+            for ext in sorted(individual_ext_details, key=lambda key: individual_ext_details[key][1], reverse=True):
+                p = round((individual_ext_details[ext][1] / size) * 100, 2)
+                i = 3
+                while p == 0.0 and individual_ext_details[ext][1]:
+                    p = round((individual_ext_details[ext][1] / size) * 100, i)
+                    i += 1
+                extn = ('.' + ext).center(max_lens[0])
+                q = str(individual_ext_details[ext][0]).center(max_lens[1])
+                s = str(parsers.pretify(individual_ext_details[ext][1])).center(max_lens[2])
+                p = (str(p) + '%').center(max_lens[3])
+                max_lens[0] = max(len(extn), max_lens[0])
+                max_lens[1] = max(len(q), max_lens[1])
+                max_lens[2] = max(len(s), max_lens[2])
+                max_lens[3] = max(len(p), max_lens[3])
+                strs.append(f"{extn} - {q} - {s} - {p}")
+            headings = ("Extension".center(max_lens[0]), "Quantity".center(max_lens[0]), "Total Size".center(max_lens[0]), "Percentage of size".center(max_lens[0]))
+            details_str += "\nStatistics of Individual Extensions:\n"
+            details_str += " - ".join(headings) + "\n"
+            details_str += "   ".join(["-" * i for i in max_lens]) + "\n"
+            details_str += "\n".join(strs) + "\n"
+    else:
+        ext = os.path.splitext(f)[1].replace(".", "").strip()
+        type_ = parsers.types.get(ext, "Unknown")
+        details_str += "Extension: ." + ext + "\n"
+        details_str += f"Type: {type_}\n"
+        details_str += f"Total Size: {parsers.pretify(size)}\n"
+        details_str += f"Creation date: {parsers.pretify_timestamp(stat.st_ctime)}\nLast Modification date: {parsers.pretify_timestamp(stat.st_mtime)}\nLast Access date: {parsers.pretify_timestamp(stat.st_atime)}\n"
+    return details_str
+
 def select(f, visitor=''):
     f = f.strip()
     if visitor:
@@ -598,7 +716,7 @@ def select(f, visitor=''):
         assets.lock.acquire()
         if os.path.exists(f):
             abs_path = os.path.abspath(f)
-            if abs_path not in configs.data['protected'] and abs_path not in assets.visitors_data[visitor]['selected']:
+            if abs_path not in configs.data['protected'] and abs_path not in assets.visitors_data[visitor]['selected'] and parsers.is_accessable(abs_path):
                 assets.visitors_data[visitor]['selected'].append(abs_path)
                 logger.debug(assets.visitors_data[visitor]['selected'])
                 os.chdir(cwd)
@@ -607,7 +725,7 @@ def select(f, visitor=''):
         elif f == "all":
             for item in os.listdir():
                 abs_path = os.path.abspath(item)
-                if item not in assets.visitors_data[visitor]['selected'] and abs_path not in configs.data['protected'] :
+                if item not in assets.visitors_data[visitor]['selected'] and abs_path not in configs.data['protected'] and parsers.is_accessable(abs_path):
                     assets.visitors_data[visitor]['selected'].append(abs_path)
             os.chdir(cwd)
             assets.lock.release()
@@ -619,14 +737,14 @@ def select(f, visitor=''):
                 items = []
                 logger.error(exc)
             for item in items:
-                if item in assets.visitors_data[visitor]['selected'] and item in configs.data['protected'] :
+                if item in assets.visitors_data[visitor]['selected'] and item in configs.data['protected'] and not parsers.is_accessable(item):
                     continue
                 assets.visitors_data[visitor]['selected'].append(item)
-            if len(items) >= 4:
+            if len(items) < 4 and items:
                 os.chdir(cwd)
                 assets.lock.release()
                 return ", ".join(map(os.path.basename, items)) + " has been selected."
-            if len(items) < 4:
+            if len(items) >= 4:
                 os.chdir(cwd)
                 assets.lock.release()
                 return str(len(items)) + " item(s) has been selected."
@@ -687,11 +805,11 @@ def unselect(f, visitor=''):
             for item in items:
                 if item in assets.visitors_data[visitor]['selected']:
                     assets.visitors_data[visitor]['selected'].remove(item)
-            if len(items) >= 4:
+            if len(items) <= 4 and items:
                 os.chdir(cwd)
                 assets.lock.release()
                 return str(len(items)) + " items has been unselected."
-            if len(items) < 4:
+            if len(items) > 4:
                 os.chdir(cwd)
                 assets.lock.release()
                 return ", ".join(items) + " items has been unselected."
@@ -719,40 +837,64 @@ def unselect(f, visitor=''):
     return ""
 
 def search(f, location=None, visitor=""):
-    if location is not None:
-        if not os.path.isdir(location):
-            return "No such directory."
-        try:
-            items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
-        except Exception as exc:
+    if location is None:
+        if os.path.exists("/storage"):
+            if not visitor:
+                print("Searching the whole phone...might take a while....")
+            try:
+                items = parsers.flexible_select(f, parsers.traverse_dir("/storage"), True)
+            except Exception as exc:
+                items = []
+                logger.error(exc)
+        elif parsers.available_drives():
             items = []
-            logger.error(exc)
-        configs.selected.extend(items)
+            if not visitor:
+                print("Searching the whole device...might take a while...")
+            for drive in parsers.available_drives():
+                if not visitor:
+                    print("Sreaching in", drive[0], "drive")
+                try:
+                    items.extend(parsers.flexible_select(f, parsers.traverse_dir(drive), True))
+                except Exception as exc:
+                    logger.error(exc)
+        else:
+            location = parsers.minimum_path(os.getcwd())
+            try:
+                items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
+            except Exception as exc:
+                items = []
+                logger.error(exc)
+        if not visitor:
+            for item in items:
+                if item not in configs.selected:
+                    configs.selected.append(item)
+        else:
+            for item in items:
+                if item not in assets.visitors_data[visitor]['selected'] and item not in configs.data['protected'] and parsers.is_accessable(item):
+                    assets.visitors_data[visitor]['selected'].append(item)
         if items and len(items) <= 4:
             return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
-        else:
+        elif items:
             return str(len(items)) + " items have been selected. View them by running 'view selected' command and unselect unwanted items manually."
         return "No such item found."
-    if os.path.exists("/storage"):
-        location = "/storage"
-        print("Searching the whole phone...might take a while....")
-        try:
-            items = parsers.flexible_select(f, parsers.traverse_dir(location) + parsers.traverse_dir("/storage/emulated/0"), True)
-        except Exception as exc:
-            items = []
-            logger.error(exc)
-        configs.selected.extend(items)
-    else:
-        location = os.getcwd()
-        try:
-            items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
-        except Exception as exc:
-            items = []
-            logger.error(exc)
-        configs.selected.extend(items)
+    if visitor:
+        with lock:
+            cwd = os.getcwd()
+            os.chdir(assets.visitors_data[visitor]['wd'])
+            location = os.path.abspath(location) if location is not None else None
+            os.chdir(cwd)
+        return search(f, location, visitor)
+    if not os.path.isdir(location):
+        return "No such directory."
+    try:
+        items = parsers.flexible_select(f, parsers.traverse_dir(location), True)
+    except Exception as exc:
+        items = []
+        logger.error(exc)
+    configs.selected.extend(items)
     if items and len(items) <= 4:
         return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
-    else:
+    elif items:
         return str(len(items)) + " items have been selected. View them by running 'view selected' command and unselect unwanted items manually."
     return "No such item found."
 
@@ -778,11 +920,13 @@ def protect(item):
         for item in items:
             if item not in configs.data['protected']:
                 configs.data['protected'].append(item)
-        if len(items) < 4:
+        logger.warning(items)
+        if len(items) <= 4 and items:
             return ", ".join(map(os.path.basename, items)) + " has been added to protected items' list."
         elif len(items) > 4:
             return str(len(items)) + " items has been added to protected items' list"
-        return "No such file or directory."
+        if not items:
+            return "No such file or directory."
     abspath = os.path.abspath(item)
     if abspath not in configs.data['protected']:
         configs.data['protected'].append(abspath)
@@ -806,7 +950,7 @@ def unprotect(item):
     for item in items:
         if item in configs.data['protected']:
             configs.data['protected'].remove(item)
-    if len(items) < 4:
+    if len(items) <= 4 and items:
         return ", ".join(map(os.path.basename, items)) + " has been removed from protected items' list."
     elif len(items) > 4:
         return str(len(items)) + " items has been removed from protected items' list"
@@ -1151,6 +1295,7 @@ tasks = {
     "clear": clear,
     "home": home,
     "search": search,
+    "details": details,
     "how to": lambda topic: helps.example if topic == "share" else none(),
     "share this": share_this,
 }
@@ -1179,7 +1324,7 @@ def serve_visitors():
                 os.chdir(assets.visitors_data[sender_name]['wd'])
                 item = args[0]
                 abspath = os.path.abspath(item)
-                if os.path.exists(item) and abspath not in configs.data["protected"]:
+                if os.path.exists(item) and abspath not in configs.data["protected"] and parsers.is_accessable(item):
                     stuff = [abspath]
                     invalid = False
                 else:
@@ -1406,4 +1551,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1610973100
+#updated: 1611064510

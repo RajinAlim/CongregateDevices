@@ -33,6 +33,7 @@ all_patterns = (
     re.compile(r"(?P<cmd>\bunprotect)\s*?(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bchat)\s(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bthrow)\s*?(?P<arg>.+)?"),
+    re.compile(r"(?P<cmd>\bdetails)\s*?(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bkick)\s*?(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bhelp)\s*?(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bhelp\b)"),
@@ -72,14 +73,198 @@ item_pat = re.compile(r"\b(?:i|item):(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #(i|i
 kw_pat1 = re.compile(r"\b('.+?'|\".+?\")\b") #'...'|".." #1
 kw_pat2 = re.compile(r"([^\s\n\t]+)") #..... #10
 range_pat = re.compile(r"\bcons(?:ider)?:(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #cons:(m-p|m, n, o, p) #3
-takeonly_pat = re.compile(r"\b(?:tp|type):(photo|image|audio|video|\.[\d\w_]+|file|folder|dir)(?:ectory)?\b") #type:photo|image|audio|video|file|folder|dir|{extention} #6
+takeonly_pat = re.compile(r"\b(?:tp|type):(photo|image|audio|video|doc|\.[\d\w_]+|file|folder|dir)(?:ectory)?\b") #type:photo|image|audio|video|doc|file|folder|dir|{extention} #6
 count_pat = re.compile(r"\b(?:t|take):(f|l|\d+)?-(\d+)\b") #t:f-n|-n|l-n|m-n #6
 ignore_pat = re.compile(r"\b(?:ign|ignore):(.+)$") #ignore:.....$ #2
 size_pat = re.compile(r"\b(?:s|size):(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?)(?:\s*-\s*(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?))?") #s:{n}b|kb|mb|gb|-{n}b|kb|mb|gb| #9
 
-image_ext = ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "raw", "webp", "tif")
-video_ext = ("mp4", "3gp", "ogg", "wmv", "webm", "flv")
-audio_ext = ("m4a", "mp3", "flac", "wav", "wma", "aac")
+image_ext = ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "raw", "webp", "tif", "psg", "dds")
+video_ext = ("mp4", "3gp", "ogg", "wmv", "webm", "flv", "3g2", "asf", "avi", "mov", "rm", "srt", "swf", "m4v", "vob")
+audio_ext = ("m4a", "mp3", "flac", "wav", "wma", "aac", "aif", "iff", "m3u", "mid", "mpa")
+doc_ext = ("pdf", "txt", "epub", "word", "doc", "docx", "mobi", "chm", "djvu", "odt", "rtf", "fb2", "azw")
+
+types = {
+    "doc": "Microsoft Word Document",
+    "docx": "Microsoft Word Open XML Document",
+    "log": "Log File",
+    "msg": "Outlook Mail Message",
+    "odt": "OpenDocument Text Document",
+    "pages": "Pages Document",
+    "rtf": "Rich Text Format File",
+    "tex": "LaTeX Source Document",
+    "tif": "Tagged Image File",
+    "tiff": "Tagged Image File Format",
+    "txt": "Plain Text File",
+    "wpd": "WordPerfect Document",
+    "wps": "Microsoft Works Word Processor Document",
+    "csv": "Comma Separated Values File",
+    "dat": "Data File",
+    "ged": "GEDCOM Genealogy Data File",
+    "key": "Keynote Presentation",
+    "keychain": "Mac OS X Keychain File",
+    "pps": "PowerPoint Slide Show",
+    "ppt": "PowerPoint Presentation",
+    "pptx": "PowerPoint Open XML Presentation",
+    "sdf": "Standard Data File",
+    "tar": "Consolidated Unix File Archive",
+    "tax2016": "TurboTax 2016 Tax Return",
+    "tax2019": "TurboTax 2019 Tax Return",
+    "vcf": "vCard File",
+    "xml": "XML File",
+    "aif": "Audio Interchange File Format",
+    "iff": "Interchange File Format",
+    "m3u": "Media Playlist File",
+    "m4a": "MPEG-4 Audio File",
+    "mid": "MIDI File",
+    "mp3": "MP3 Audio File",
+    "mpa": "MPEG-2 Audio File",
+    "wav": "WAVE Audio File",
+    "wma": "Windows Media Audio File",
+    "3g2": "3GPP2 Multimedia File",
+    "3gp": "3GPP Multimedia File",
+    "asf": "Advanced Systems Format File",
+    "avi": "Audio Video Interleave File",
+    "flv": "Flash Video File",
+    "m4v": "iTunes Video File",
+    "mov": "Apple QuickTime Movie",
+    "mp4": "MPEG-4 Video File",
+    "mpg": "MPEG Video File",
+    "rm": "RealMedia File",
+    "srt": "SubRip Subtitle File",
+    "swf": "Shockwave Flash Movie",
+    "vob": "DVD Video Object File",
+    "wmv": "Windows Media Video File",
+    "3dm": "Rhino 3D Model",
+    "3ds": "3D Studio Scene",
+    "max": "3ds Max Scene File",
+    "obj": "Wavefront 3D Object File",
+    "bmp": "Bitmap Image File",
+    "dds": "DirectDraw Surface",
+    "gif": "Graphical Interchange Format File",
+    "heic": "High Efficiency Image Format",
+    "jpg": "JPEG Image",
+    "png": "Portable Network Graphic",
+    "psd": "Adobe Photoshop Document",
+    "pspimage": "PaintShop Pro Image",
+    "tga": "Targa Graphic",
+    "thm": "Thumbnail Image File",
+    "yuv": "YUV Encoded Image File",
+    "ai": "Adobe Illustrator File",
+    "eps": "Encapsulated PostScript File",
+    "svg": "Scalable Vector Graphics File",
+    "indd": "Adobe InDesign Document",
+    "pct": "Picture File",
+    "pdf": "Portable Document Format File",
+    "xlr": "Works Spreadsheet",
+    "xls": "Excel Spreadsheet",
+    "xlsx": "Microsoft Excel Open XML Spreadsheet",
+    "accdb": "Access 2007 Database File",
+    "db": "Database File",
+    "dbf": "Database File",
+    "mdb": "Microsoft Access Database",
+    "pdb": "Program Database",
+    "sql": "Structured Query Language Data File",
+    "apk": "Android Package File",
+    "app": "macOS Application",
+    "bat": "DOS Batch File",
+    "cgi": "Common Gateway Interface Script",
+    "com": "DOS Command File",
+    "exe": "Windows Executable File",
+    "gadget": "Windows Gadget",
+    "jar": "Java Archive File",
+    "wsf": "Windows Script File",
+    "b": "Grand Theft Auto 3 Saved Game File",
+    "dem": "Video Game Demo File",
+    "gam": "Saved Game File",
+    "nes": "Nintendo (NES) ROM File",
+    "rom": "N64 Game ROM File",
+    "sav": "Saved Game",
+    "dwg": "AutoCAD Drawing Database File",
+    "dxf": "Drawing Exchange Format File",
+    "gpx": "GPS Exchange File",
+    "kml": "Keyhole Markup Language File",
+    "kmz": "Google Earth Placemark File",
+    "asp": "Active Server Page",
+    "aspx": "Active Server Page Extended File",
+    "cer": "Internet Security Certificate",
+    "cfm": "ColdFusion Markup File",
+    "crdownload": "Chrome Partially Downloaded File",
+    "csr": "Certificate Signing Request File",
+    "css": "Cascading Style Sheet",
+    "dcr": "Shockwave Media File",
+    "htm": "Hypertext Markup Language File",
+    "html": "Hypertext Markup Language File",
+    "js": "JavaScript File",
+    "jsp": "Java Server Page",
+    "php": "PHP Source Code File",
+    "rss": "Rich Site Summary",
+    "xhtml": "Extensible Hypertext Markup Language File",
+    "crx": "Chrome Extension",
+    "plugin": "Mac OS X Plugin",
+    "fnt": "Windows Font File",
+    "fon": "Windows Font Library",
+    "otf": "OpenType Font",
+    "ttf": "TrueType Font",
+    "cab": "Windows Cabinet File",
+    "cpl": "Windows Control Panel Item",
+    "cur": "Windows Cursor",
+    "deskthemepack": "Windows 8 Desktop Theme Pack File",
+    "dll": "Dynamic Link Library",
+    "dmp": "Windows Memory Dump",
+    "drv": "Device Driver",
+    "icns": "macOS Icon Resource File",
+    "ico": "Icon File",
+    "lnk": "Windows Shortcut",
+    "sys": "Windows System File",
+    "cfg": "Configuration File",
+    "ini": "Windows Initialization File",
+    "prf": "Outlook Profile File",
+    "hqx": "BinHex 4.0 Encoded File",
+    "mim": "Multi-Purpose Internet Mail Message File",
+    "uue": "Uuencoded File",
+    "7z": "7-Zip Compressed File",
+    "cbr": "Comic Book RAR Archive",
+    "deb": "Debian Software Package",
+    "gz": "Gnu Zipped Archive",
+    "pkg": "Mac OS X Installer Package",
+    "rar": "WinRAR Compressed Archive",
+    "rpm": "Red Hat Package Manager File",
+    "sitx": "StuffIt X Archive",
+    "tar.gz": "Compressed Tarball File",
+    "zip": "Zipped File",
+    "zipx": "Extended Zip Archive",
+    "bin": "Binary Disc Image",
+    "cue": "Cue Sheet File",
+    "dmg": "Apple Disk Image",
+    "iso": "Disc Image File",
+    "mdf": "Media Disc Image File",
+    "toast": "Toast Disc Image",
+    "vcd": "Virtual CD",
+    "c": "C/C++ Source Code File",
+    "class": "Java Class File",
+    "cpp": "C++ Source Code File",
+    "cs": "C# Source Code File",
+    "dtd": "Document Type Definition File",
+    "fla": "Adobe Animate Animation",
+    "h": "C/C++/Objective-C Header File",
+    "java": "Java Source Code File",
+    "lua": "Lua Source File",
+    "m": "Objective-C Implementation File",
+    "pl": "Perl Script",
+    "py": "Python Script",
+    "sh": "Bash Shell Script",
+    "sln": "Visual Studio Solution File",
+    "swift": "Swift Source Code File",
+    "vb": "Visual Basic Project Item File",
+    "vcxproj": "Visual C++ Project",
+    "xcodeproj": "Xcode Project",
+    "bak": "Backup File",
+    "tmp": "Temporary File",
+    "ics": "Calendar File",
+    "msi": "Windows Installer Package",
+    "part": "Partially Downloaded File",
+    "torrent": "BitTorrent File"
+}
 
 @cache
 def decimal(num: str, base: int=2):
@@ -185,6 +370,45 @@ def pretify_time(seconds):
     as_str = as_str + 's' if seconds > 1 else as_str
     return as_str
 
+def is_accessable(path):
+    if path in configs.data['protected']:
+        return False
+    parts = split_path(path)
+    for i in range(1, len(parts) + 1):
+        sub_path = os.path.join(*parts[:i])
+        if sub_path in configs.data['protected']:
+            return False
+    return True
+
+@cache
+def available_drives():
+    try:
+        import win32api
+    except ImportError:
+        return []
+    drives = win32api.GetLogicalDriveStrings()
+    drives = drives.split('\000')[:-1]
+    return drives
+
+@cache
+def pretify_timestamp(timestamp, fmt="%A %d %B %Y %I:%M:%S %p"):
+    dt = datetime.datetime.fromtimestamp(timestamp)
+    return dt.strftime(fmt)
+
+@cache
+def minimum_path(path):
+    with lock:
+        cwd = os.getcwd()
+        lwd = cwd
+        while True:
+            try:
+                os.chdir("..")
+                os.listdir()
+                lwd = os.getcwd()
+            except:
+                os.chdir(cwd)
+                return lwd
+
 @cache
 def total_size(path):
     if os.path.isfile(path):
@@ -282,22 +506,25 @@ def split_path(path):
     paths.reverse()
     return paths
 
-def traverse_dir(path: str, depth=-1):
-    def gen(path, depth):
-        prev_wd = os.getcwd()
-        try:
-            os.chdir(path)
-            items = os.listdir()
-        except:
-            items = []
+def _traverse_dir(path, depth):
+    prev_wd = os.getcwd()
+    try:
+        os.chdir(path)
+        items = os.listdir()
+    except:
+        items = []
     
-        for f in items:
-            if os.path.isfile(f):
-                yield os.path.abspath(f)
-            elif depth < 0 or depth != 0:
-                yield from traverse_dir(f, depth - 1)
-        os.chdir(prev_wd)
-    return list(gen(path, depth))
+    for f in items:
+        if os.path.isfile(f):
+            yield os.path.abspath(f)
+        elif depth < 0 or depth != 0:
+            yield from _traverse_dir(f, depth - 1)
+    os.chdir(prev_wd)
+
+def traverse_dir(path: str, depth=-1):
+    if os.path.abspath(path) == "/storage":
+        return list(_traverse_dir(path, depth)) + traverse_dir("/storage/emulated/0") 
+    return list(_traverse_dir(path, depth))
 
 def dirmap(dr, level=0, ignore=[], fillchar="\t"):
     
@@ -428,13 +655,12 @@ def flexible_select(f, items=None, return_exact=False):
                     not_to_take.add(item)
             elif takeonly in ("image", "photo") and ext not in image_ext:
                 not_to_take.add(item)
-                logger.warning(("photo", item))
             elif takeonly == "audio" and ext not in audio_ext:
                 not_to_take.add(item)
-                logger.warning(("audio", item))
             elif takeonly == "video" and ext not in video_ext:
                 not_to_take.add(item)
-                logger.warning(("video", item))
+            elif takeonly == "doc" and ext not in doc_ext:
+                not_to_take.add(item)
     for item in not_to_take:
         if item in items:
             items.remove(item)
@@ -737,4 +963,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1610981458
+#updated: 1611064143

@@ -18,6 +18,7 @@ helps = {
     "pwd": "Run 'pwd' command to know your working directory.Every file you receive will be stored according to your working directory.",
     "ls": "Run 'ls' command to get the list of items in current working directory.",
     "dirmap": "Run 'dirmap' to get a visual representation of your working directory.\nRun 'dirmap {directory}' to get visual representation of any directory.",
+    "details": "Run 'details {item}' command to get some basic details about any file or folder.",
     "select": """Run 'select {item}' command to select any item, here {item} can be any file or folder.\nRun 'select all' command to select everything in your current working directory.
 Selecting the most flexible feature of this programme. You can specify some conditions and items meeting all conditions will be selected. Here are the conditions and rules of specifying them:
 time:
@@ -255,6 +256,7 @@ formats = {
     "ls": "ls",
     "cd": "cd {directory}",
     "dirmap": "dirmap, dirmap {directory}",
+    "details": "details {item}",
     "select": "select {item}, select all, select {conditions}",
     "unselect": "unselect {item}, unselect all, unselect {n}, unselect {m}-{n}, unselect {m} {n} {o} {p}...",
     "search": "search {conditions}, search {conditions}",
@@ -315,4 +317,4 @@ def help(topic=None):
 
 
 #name: helps.py
-#updated: 1610952969
+#updated: 1611064053
