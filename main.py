@@ -114,7 +114,7 @@ if available_updates:
                     break
                 continue
             print("Downloaded", os.path.basename(file))
-            print("Remaining", len(available_updates) - 1)
+            print("Remaining", len(available_updates) - 1 - i)
         else:
             with open(os.path.join(maintainer.project_dir, "src", "python", "maintainer.py")) as f:
                 data_to_clear = maintainer.retrieve_history(f.read())
