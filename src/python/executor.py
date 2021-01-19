@@ -593,6 +593,7 @@ def dirmap(dr=None, visitor=''):
             dr = os.getcwd()
         else:
             dr = dr.strip()
+    dr = parsers.real_path(dr)
     drmap = parsers.dirmap(dr, fillchar="    ")
     return drmap
 
@@ -712,7 +713,7 @@ def details(f, visitor=""):
     return details_str
 
 def select(f, visitor=''):
-    f = f.strip()
+    parsers.real_path(f = f.strip())
     if visitor:
         cwd = os.getcwd()
         os.chdir(assets.visitors_data[visitor]['wd'])
@@ -785,7 +786,7 @@ def select(f, visitor=''):
         return "No such file or directory."
 
 def unselect(f, visitor=''):
-    f = f.strip()
+    f = parsers.real_path(f.strip())
     if visitor:
         if f == "all":
             assets.visitors_data[visitor]['selected'].clear()
@@ -902,7 +903,7 @@ def search(f, location=None, visitor=""):
     return "No such item found."
 
 def protect(item):
-    item = item.strip()
+    item = parsers.real_path(item.strip())
     if not os.path.exists(item):
         if item == "selected":
             for file in configs.selected:
@@ -936,7 +937,7 @@ def protect(item):
     return item + " has been added to protected items' list."
 
 def unprotect(item):
-    item = item.strip()
+    item = parsers.real_path(item.strip())
     if item == "all":
         configs.data['protected'].clear()
         return "Cleared protected items' list."
