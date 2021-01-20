@@ -602,7 +602,11 @@ def details(f, visitor=""):
     f = parsers.real_path(f.strip())
     details_str = ""
     if f == "selected":
-        for f in configs.selected:
+        if visitor:
+            l = assets.visitors_data[visitor]["selected"]
+        else:
+            l = configs.selected
+        for f in l:
             details_str += details(f) + "\n"
         return details_str
     if visitor:
@@ -678,6 +682,8 @@ def details(f, visitor=""):
         max_lens = [len(heading) for heading in headings]
         for file in files:
             ext = os.path.splitext(file)[1].replace(".", "").strip()
+            if not ext:
+                continue
             data = individual_ext_details[ext]
             data[0] += 1
             data[1] += os.path.getsize(file)
