@@ -145,7 +145,17 @@ def join(server_id, controlled=False):
 def check():
     for data in configs.data["history"]:
         zone_id = data[0]
-        res = assets.connect(zone_id)
+        res = [None]
+        def connect():
+            try:
+                res[0] = assets.connect(zone_id)
+            except:
+                pass
+        t = threading.Thread(target=connect)
+        t.deamon = True
+        t.start()
+        time.sleep(3)
+        res = res[0]
         if res in (404, None):
             continue
         client = assets.Client(res, None)
@@ -1565,4 +1575,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611152045
+#updated: 1611159439
