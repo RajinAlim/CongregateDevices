@@ -625,10 +625,7 @@ def details(f, visitor=""):
     abspath = os.path.abspath(f)
     size = parsers.total_size(f)
     stat = os.stat(f)
-    if not os.path.basename(f) or os.path.basename(f).isspace():
-        details_str += f"Name: {parsers.pretify_path(f).replace('/', '')}\nAbosute path: {abspath}\n"
-    else:
-        details_str += f"Name: {os.path.basename(f)}\nAbosute path: {abspath}\n"
+    details_str += f"Name: {parsers.split_path(f)[-1]}\nAbosute path: {abspath}\n"
     if os.path.isdir(f):
         files = parsers.traverse_dir(f)
         details_str += "Type: Folder\n"
@@ -694,8 +691,8 @@ def details(f, visitor=""):
             strs = []
             individual_ext_details = {key: individual_ext_details[key] for key in sorted(individual_ext_details, key=lambda key: individual_ext_details[key][1], reverse=True)}
             if no_ext[0]:
-                individual_ext_details["without extension"] = no_ext
-                max_lens[0] = len("without extension")
+                individual_ext_details["no extension"] = no_ext
+                max_lens[0] = len("no extension")
             for ext in individual_ext_details:
                 p = round((individual_ext_details[ext][1] / size) * 100, 2)
                 i = 3
@@ -1568,4 +1565,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611150762
+#updated: 1611152045
