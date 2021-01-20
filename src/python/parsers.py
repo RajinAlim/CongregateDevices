@@ -370,13 +370,24 @@ def pretify_time(seconds):
     as_str = as_str + 's' if seconds > 1 else as_str
     return as_str
 
-def is_accessable(path):
-    if path in configs.data['protected']:
+def is_accessable(path, for_visitor=False):
+    if not for_visitor:
+        try:
+            cwd = os.getcwd()
+            os.chdir(path)
+            os.listdir()
+        except Exception as exc:
+            logger.error(exc)
+            os.chdir(cwd)
+            return False
+        os.chdir(cwd)
+        return True
+    if path in configs.data['protected'] or not is_accessable(path):
         return False
     parts = split_path(path)
     for i in range(1, len(parts) + 1):
         sub_path = os.path.join(*parts[:i])
-        if sub_path in configs.data['protected']:
+        if sub_path in configs.data['protected'] or not is_accessable(path):
             return False
     return True
 
@@ -966,4 +977,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1611151527
+#updated: 1611160320

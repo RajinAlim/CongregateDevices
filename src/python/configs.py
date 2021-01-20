@@ -31,7 +31,7 @@ BODY_SIZE = 2048
 DECREASE = BODY_SIZE // 16 
 BUFFER_SIZE = BODY_SIZE + HEADER_SIZE
 ABOUT = """Project: Congregate Devices.
-Last Updated Wednesday, 20 January 2021, 07:57 PM
+Last Updated Wednesday, 20 January 2021, 10:40 PM
 About Author:
     Name: Rajin Alim.
     Age: 17 (at the time of doing this project)
@@ -127,4 +127,4 @@ os.chdir(data['home_dir'])
 
 
 #name: configs.py
-#updated: 1611151020
+#updated: 1611160504

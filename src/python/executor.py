@@ -154,7 +154,7 @@ def check():
         t = threading.Thread(target=connect)
         t.deamon = True
         t.start()
-        time.sleep(3)
+        time.sleep(2)
         res = res[0]
         if res in (404, None):
             continue
@@ -519,15 +519,15 @@ def cd(dr, visitor=''):
             os.chdir(assets.visitors_data[visitor]['wd'])
         if not os.path.exists(dr):
             items = parsers.flexible_select("i:" + dr)
-            while items and (not os.path.isdir(items[0]) or parsers.is_accessable(items[0])):
+            while items and not os.path.isdir(items[0]):
                 items.pop(0)
-            if items:
+            if items and parsers.is_accessable(items[0], True):
                 assets.visitors_data[visitor]['wd'] = items[0]
                 os.chdir(cwd)
                 assets.lock.release()
                 return "Current working directory: " + parsers.pretify_path(items[0])
         if os.path.exists(dr):
-            if os.path.abspath(dr) not in configs.data['protected'] and parsers.is_accessable(dr):
+            if os.path.abspath(dr) not in configs.data['protected'] and parsers.is_accessable(dr, True):
                 assets.visitors_data[visitor]['wd'] = os.path.abspath(dr)
                 os.chdir(cwd)
                 assets.lock.release()
@@ -540,10 +540,10 @@ def cd(dr, visitor=''):
                 if dr and assets.visitors_data[visitor]['wd']:
                     os.chdir(cwd)
                     assets.lock.release()
-                    return "No such directory."
+                    return "No such directory or directory is not accessable."
                 try:
                     wd = dr
-                    while wd in configs.data["protected"] or not parsers.is_accessable(wd):
+                    while wd in configs.data["protected"] or not parsers.is_accessable(wd, True):
                         os.chdir("..")
                         wd = os.getcwd()
                         os.listdir()
@@ -570,7 +570,7 @@ def cd(dr, visitor=''):
                     os.chdir(cwd)
                     assets.lock.release()
                     return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
-    if os.path.exists(dr):
+    if os.path.exists(dr) and parsers.is_accessable(dr):
         abspath = os.path.abspath(dr)
         os.chdir(dr)
         return "Current Working directory: " + parsers.pretify_path(abspath)
@@ -580,14 +580,15 @@ def cd(dr, visitor=''):
     items = parsers.flexible_select("i:" + dr)
     while items and not os.path.isdir(items[0]):
         items.pop(0)
-    if items:
+        logger.debug(items)
+    if items and parsers.is_accessable(items[0]):
         os.chdir(items[0])
         return "Current Working directory: " + parsers.pretify_path(os.getcwd())
-    return "No such directory"
+    return "No such directory or directory is not accessable."
 
 def dirmap(dr=None, visitor=''):
     if visitor:
-        if dr and not parsers.is_accessable(dr):
+        if dr and not parsers.is_accessable(dr, True):
             return "No such directory."
         cwd = os.getcwd()
         assets.lock.acquire()
@@ -624,7 +625,7 @@ def details(f, visitor=""):
             cwd = os.getcwd()
             os.chdir(assets.visitors_data[visitor]['wd'])
             f = os.path.abspath(f)
-            if not parsers.is_accessable(f):
+            if not parsers.is_accessable(f, True):
                 os.chdir(cwd)
                 return "No such file or directory."
             os.chdir(cwd)
@@ -740,7 +741,7 @@ def select(f, visitor=''):
         assets.lock.acquire()
         if os.path.exists(f):
             abs_path = os.path.abspath(f)
-            if abs_path not in configs.data['protected'] and abs_path not in assets.visitors_data[visitor]['selected'] and parsers.is_accessable(abs_path):
+            if abs_path not in configs.data['protected'] and abs_path not in assets.visitors_data[visitor]['selected'] and parsers.is_accessable(abs_path, True):
                 assets.visitors_data[visitor]['selected'].append(abs_path)
                 logger.debug(assets.visitors_data[visitor]['selected'])
                 os.chdir(cwd)
@@ -749,7 +750,7 @@ def select(f, visitor=''):
         elif f == "all":
             for item in os.listdir():
                 abs_path = os.path.abspath(item)
-                if item not in assets.visitors_data[visitor]['selected'] and abs_path not in configs.data['protected'] and parsers.is_accessable(abs_path):
+                if item not in assets.visitors_data[visitor]['selected'] and abs_path not in configs.data['protected'] and parsers.is_accessable(abs_path, True):
                     assets.visitors_data[visitor]['selected'].append(abs_path)
             os.chdir(cwd)
             assets.lock.release()
@@ -761,7 +762,7 @@ def select(f, visitor=''):
                 items = []
                 logger.error(exc)
             for item in items:
-                if item in assets.visitors_data[visitor]['selected'] and item in configs.data['protected'] and not parsers.is_accessable(item):
+                if item in assets.visitors_data[visitor]['selected'] and item in configs.data['protected'] and not parsers.is_accessable(item, True):
                     continue
                 assets.visitors_data[visitor]['selected'].append(item)
             if len(items) < 4 and items:
@@ -894,7 +895,7 @@ def search(f, location=None, visitor=""):
                     configs.selected.append(item)
         else:
             for item in items:
-                if item not in assets.visitors_data[visitor]['selected'] and item not in configs.data['protected'] and parsers.is_accessable(item):
+                if item not in assets.visitors_data[visitor]['selected'] and item not in configs.data['protected'] and parsers.is_accessable(item, True):
                     assets.visitors_data[visitor]['selected'].append(item)
         if items and len(items) <= 4:
             return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
@@ -1348,7 +1349,7 @@ def serve_visitors():
                 os.chdir(assets.visitors_data[sender_name]['wd'])
                 item = args[0]
                 abspath = os.path.abspath(item)
-                if os.path.exists(item) and abspath not in configs.data["protected"] and parsers.is_accessable(item):
+                if os.path.exists(item) and abspath not in configs.data["protected"] and parsers.is_accessable(item, True):
                     stuff = [abspath]
                     invalid = False
                 else:
@@ -1575,4 +1576,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611159439
+#updated: 1611160776
