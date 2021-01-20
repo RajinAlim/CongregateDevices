@@ -488,7 +488,7 @@ def ls(visitor='', for_programme=False):
     for f in os.listdir():
         if os.path.abspath(f) in configs.data['protected'] and visitor:
             continue
-        i ++ 1
+        i =+ 1
         if os.path.isfile(f):
             items.append(f"{i + 1}.(file) {f}")
         elif os.path.isdir(f):
