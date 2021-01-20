@@ -161,8 +161,8 @@ while True:
 
 """Project: Congregate Devices.
 Author: Rajin Alim.
-Last Updated Tuesday, 19 January 2021, 07:56 PM"""
+Last Updated Wednesday, 20 January 2021, 07:57 PM"""
 
 
 #name: main.py
-#updated: 1610819697
+#updated: 1611150762
