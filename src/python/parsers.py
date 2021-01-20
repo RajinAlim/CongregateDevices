@@ -433,6 +433,9 @@ def pretify(m, do_round=True):
         i += 1
         if i >= 3:
             break
+    if m % 1024 == 0 and m >= 1024 and i < 3:
+        i += 1
+        m /= 1024
     return f"{round(m, 2) if not m.is_integer() else int(m)} {measures[i]}" if do_round else str(m) + measures[i]
 
 @cache
