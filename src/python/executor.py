@@ -488,12 +488,12 @@ def ls(visitor='', for_programme=False):
     for f in os.listdir():
         if os.path.abspath(f) in configs.data['protected'] and visitor:
             continue
-        i =+ 1
         if os.path.isfile(f):
             items.append(f"{i + 1}.(file) {f}")
         elif os.path.isdir(f):
             items.append(f"{i + 1}.(folder) {f}")
         items.append(f"size: {parsers.pretify(parsers.total_size(os.path.abspath(f)))}, last modified on {datetime.datetime.fromtimestamp(os.stat(f).st_mtime).strftime('%d %B %Y %I:%M:%S %p')}")
+        i += 1
     if visitor:
         os.chdir(cwd)
         assets.lock.release()
