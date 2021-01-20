@@ -599,7 +599,7 @@ def dirmap(dr=None, visitor=''):
 
 @cache
 def details(f, visitor=""):
-    f = parsers.real_path(f.strip())
+    f = os.path.abspath(parsers.real_path(f.strip()))
     details_str = ""
     if f == "selected":
         if visitor:
