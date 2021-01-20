@@ -672,7 +672,7 @@ def details(f, visitor=""):
                 max_lens[3] = max(len(p), max_lens[3])
                 type_ = type_.center(max_lens[0])
                 strs.append(f"{type_.title()} - {q} - {s} - {p}")
-            headings = ("Type".center(max_lens[0]), "Quantity".center(max_lens[0]), "Total Size".center(max_lens[0]), "Percentage of size".center(max_lens[0]))
+            headings = ("Type".center(max_lens[0]), "Quantity".center(max_lens[1]), "Total Size".center(max_lens[2]), "Percentage of size".center(max_lens[3]))
             details_str += "\nStatistics of Individual Types:\n"
             details_str += " - ".join(headings) + "\n"
             details_str += "   ".join(["-" * i for i in max_lens]) + "\n"
@@ -680,22 +680,29 @@ def details(f, visitor=""):
         individual_ext_details = collections.defaultdict(lambda : [0, 0])
         headings = ("Extension", "Quantity", "Total Size", "Percentage of size")
         max_lens = [len(heading) for heading in headings]
+        no_ext = [0, 0]
         for file in files:
             ext = os.path.splitext(file)[1].replace(".", "").strip()
             if not ext:
+                no_ext[0] += 1
+                no_ext[1] += os.path.getsize(file)
                 continue
             data = individual_ext_details[ext]
             data[0] += 1
             data[1] += os.path.getsize(file)
         if individual_ext_details:
             strs = []
-            for ext in sorted(individual_ext_details, key=lambda key: individual_ext_details[key][1], reverse=True):
+            individual_ext_details = {key: individual_ext_details[key] for key in sorted(individual_ext_details, key=lambda key: individual_ext_details[key][1], reverse=True)}
+            if no_ext[0]:
+                individual_ext_details["without extension"] = no_ext
+                max_lens[0] = len("without extension")
+            for ext in individual_ext_details:
                 p = round((individual_ext_details[ext][1] / size) * 100, 2)
                 i = 3
                 while p == 0.0 and individual_ext_details[ext][1]:
                     p = round((individual_ext_details[ext][1] / size) * 100, i)
                     i += 1
-                extn = ('.' + ext).center(max_lens[0])
+                extn = ('.' + ext).center(max_lens[0]) if " " not in ext else ext.center(max_lens[0])
                 q = str(individual_ext_details[ext][0]).center(max_lens[1])
                 s = str(parsers.pretify(individual_ext_details[ext][1])).center(max_lens[2])
                 p = (str(p) + '%').center(max_lens[3])
@@ -704,7 +711,7 @@ def details(f, visitor=""):
                 max_lens[2] = max(len(s), max_lens[2])
                 max_lens[3] = max(len(p), max_lens[3])
                 strs.append(f"{extn} - {q} - {s} - {p}")
-            headings = ("Extension".center(max_lens[0]), "Quantity".center(max_lens[0]), "Total Size".center(max_lens[0]), "Percentage of size".center(max_lens[0]))
+            headings = ("Extension".center(max_lens[0]), "Quantity".center(max_lens[1]), "Total Size".center(max_lens[2]), "Percentage of size".center(max_lens[3]))
             details_str += "\nStatistics of Individual Extensions:\n"
             details_str += " - ".join(headings) + "\n"
             details_str += "   ".join(["-" * i for i in max_lens]) + "\n"
