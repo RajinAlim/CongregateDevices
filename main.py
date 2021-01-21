@@ -106,7 +106,7 @@ if available_updates:
             count = i + 1
             file, date = data
             parts = file.split("/")
-            path = os.getcwd() if len(parts) == 1 else os.path.join(maintainer.project_dir, *parts[:-1])
+            path = os.path.join(maintainer.project_dir, *parts[:-1])
             path = maintainer.download_file(file, path)
             if path is None:
                 print("Failed to download", os.path.basename(file))
@@ -120,8 +120,8 @@ if available_updates:
                 data_to_clear = maintainer.retrieve_history(f.read())
             if data_to_clear is not None and "clear_data" in data_to_clear:
                 for key in data_to_clear:
-                    if key in configs.data['history']:
-                        configs.data['history'].pop(key)
+                    if key in configs.data:
+                        configs.data.pop(key)
             print(len(available_updates), "file(s) successfully updated. Exiting programme. Kindly reopen (rerun 'main.py').")
             sys.exit()
     print()
@@ -161,8 +161,8 @@ while True:
 
 """Project: Congregate Devices.
 Author: Rajin Alim.
-Last Updated Wednesday, 20 January 2021, 07:57 PM"""
+Last Updated Thursday, 21 January 2021, 12:27 PM"""
 
 
 #name: main.py
-#updated: 1611150762
+#updated: 1611210011

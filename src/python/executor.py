@@ -570,7 +570,9 @@ def cd(dr, visitor=''):
                     os.chdir(cwd)
                     assets.lock.release()
                     return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
-    if os.path.exists(dr) and parsers.is_accessable(dr):
+    if os.path.exists(dr):
+        if parsers.is_accessable(dr):
+            return "Directory is not accessable."
         abspath = os.path.abspath(dr)
         os.chdir(dr)
         return "Current Working directory: " + parsers.pretify_path(abspath)
@@ -581,10 +583,12 @@ def cd(dr, visitor=''):
     while items and not os.path.isdir(items[0]):
         items.pop(0)
         logger.debug(items)
-    if items and parsers.is_accessable(items[0]):
+    if items:
+        if parsers.is_accessable(items[0]):
+            return "Directory is not accessable."
         os.chdir(items[0])
         return "Current Working directory: " + parsers.pretify_path(os.getcwd())
-    return "No such directory or directory is not accessable."
+    return "No such directory."
 
 def dirmap(dr=None, visitor=''):
     if visitor:
@@ -610,7 +614,7 @@ def dirmap(dr=None, visitor=''):
 
 @cache
 def details(f, visitor=""):
-    f = os.path.abspath(parsers.real_path(f.strip()))
+    f = f.strip()
     details_str = ""
     if f == "selected":
         if visitor:
@@ -629,7 +633,8 @@ def details(f, visitor=""):
                 os.chdir(cwd)
                 return "No such file or directory."
             os.chdir(cwd)
-        return details(f, visitor)
+        return details(f)
+    f = os.path.abspath(parsers.real_path(f))
     if not os.path.exists(f):
         return "No such file or directory."
     name = os.path.basename(f)
@@ -908,7 +913,7 @@ def search(f, location=None, visitor=""):
             os.chdir(assets.visitors_data[visitor]['wd'])
             location = os.path.abspath(location) if location is not None else None
             os.chdir(cwd)
-        return search(f, location, visitor)
+        return search(f, location, [visitor])
     if not os.path.isdir(location):
         return "No such directory."
     try:
@@ -916,7 +921,10 @@ def search(f, location=None, visitor=""):
     except Exception as exc:
         items = []
         logger.error(exc)
-    configs.selected.extend(items)
+    l = assets.visitors_data[visitor[0]]['selected'] if type(visitor) is list else configs.selected
+    for item in items:
+        if item not in l:
+            l.append(item)
     if items and len(items) <= 4:
         return ", ".join(map(os.path.basename, items)) + " has been selected. (unselect unwanted items manually)"
     elif items:
@@ -1576,4 +1584,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611160776
+#updated: 1611210373
