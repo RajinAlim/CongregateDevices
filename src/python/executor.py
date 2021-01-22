@@ -3,6 +3,7 @@ import time
 import datetime
 import json
 import sys
+import re
 import os
 import shutil
 import queue
@@ -527,7 +528,9 @@ def cd(dr, visitor=''):
                 assets.lock.release()
                 return "Current working directory: " + parsers.pretify_path(items[0])
         if os.path.exists(dr):
-            if os.path.abspath(dr) not in configs.data['protected'] and parsers.is_accessable(dr, True):
+            if not parsers.is_accessable(dr, True):
+                return "Directory is not accessable."
+            if os.path.abspath(dr) not in configs.data['protected']:
                 assets.visitors_data[visitor]['wd'] = os.path.abspath(dr)
                 os.chdir(cwd)
                 assets.lock.release()
@@ -566,12 +569,14 @@ def cd(dr, visitor=''):
                         os.chdir(cwd)
                         assets.lock.release()
                         return "Unable to change directory."
+                    if not parsers.is_accessable(dirs[0], True):
+                        return "Directory is not accessable."
                     assets.visitors_data[visitor]['wd'] = dirs[0]
                     os.chdir(cwd)
                     assets.lock.release()
                     return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
     if os.path.exists(dr):
-        if parsers.is_accessable(dr):
+        if not parsers.is_accessable(dr):
             return "Directory is not accessable."
         abspath = os.path.abspath(dr)
         os.chdir(dr)
@@ -584,11 +589,228 @@ def cd(dr, visitor=''):
         items.pop(0)
         logger.debug(items)
     if items:
-        if parsers.is_accessable(items[0]):
+        if not parsers.is_accessable(items[0]):
             return "Directory is not accessable."
         os.chdir(items[0])
         return "Current Working directory: " + parsers.pretify_path(os.getcwd())
     return "No such directory."
+
+def copy(f, location):
+    f = f.strip()
+    if f == "selected":
+        did, failed = 0, 0
+        for item in configs.selected:
+            if "has been copied at" not in copy(item, location):
+                failed += 1
+            else:
+                did += 1
+        if failed:
+            return f"Failed to copy {failed} item{'s' if failed > 1 else ''}."
+        else:
+            return f"{did} item{'s' if did > 1 else ''} has been copied at {parsers.pretify_path(location)}."
+    if not os.path.exists(f) or not os.path.exists(location):
+        return "No such file or directory."
+    if not parsers.is_accessable(f) or not parsers.is_accessable(location):
+        return "Access denied."
+    f = parsers.real_path(f)
+    basename = parsers.split_path(f)[-1]
+    location = os.path.join(location, basename)
+    location = os.path.abspath(location)
+    if os.path.exists(location):
+        confirm = input(f"There is already an item named {basename} in the destination folder. Overwrite?(y/n): ").strip().lower() == "y"
+        if confirm:
+            pass
+        else:
+            return ''
+    if os.path.isfile(f):
+        try:
+            shutil.copy2(f, location)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to copy."
+        else:
+            return f"{f} has been copied at {parsers.pretify_path(os.path.dirname(location))} folder."
+    if os.path.isdir(f):
+        try:
+            shutil.copytree(f, location)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to copy."
+        else:
+            return f"{f} has been copied at {parsers.pretify_path(os.path.dirname(location))} folder."
+
+def move(f, location):
+    f = f.strip()
+    if f == "selected":
+        did, failed = 0, 0
+        for item in configs.selected:
+            if "has been copied at" not in move(item, location):
+                failed += 1
+            else:
+                did += 1
+        if failed:
+            return f"Failed to move {failed} item{'s' if failed > 1 else ''}."
+        else:
+            return f"{did} item{'s' if did > 1 else ''} has been moved to {parsers.pretify_path(os.path.dirname(location))} folder."
+    if not os.path.exists(f) or not os.path.exists(location):
+        return "No such file or directory."
+    if not parsers.is_accessable(f) or not parsers.is_accessable(location):
+        return "Access denied."
+    f = parsers.real_path(f)
+    basename = parsers.split_path(f)[-1]
+    location = os.path.join(location, basename)
+    location = os.path.abspath(location)
+    if os.path.exists(location):
+        confirm = input(f"There is already an item named {basename} in the destination folder. Overwrite it?(y/n): ").strip().lower() == "y"
+        if confirm:
+            pass
+        else:
+            return ''
+    if os.path.isfile(f):
+        try:
+            shutil.move(f, location)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to move."
+        else:
+            return f"{f} has been moved to {parsers.pretify_path(os.path.dirname(location))} folder."
+    if os.path.isdir(f):
+        try:
+            shutil.copytree(f, location)
+            shutil.rmtree(f)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to move."
+        else:
+            return f"{f} has been moved to {parsers.pretify_path(os.path.dirname(location))} folder."
+
+def rename(f, new_name):
+    f = f.strip()
+    if not os.path.exists(f):
+        return "No such file or directory."
+    if not parsers.is_accessable(f):
+        return "Access denied."
+    f = parsers.real_path(f)
+    full = os.path.isabs(f)
+    f = os.path.abspath(f)
+    parts = parsers.split_path(f)
+    basename = parts[-1]
+    parts[-1] = new_name
+    new_f = os.path.join(*parts)
+    if os.path.exists(new_f):
+        confirm = input(f"There is already an item named {new_name}. Overwrite it?(y/n): ").strip().lower() == "y"
+        if confirm:
+            pass
+        else:
+            return ''
+    if os.path.isfile(f):
+        try:
+            shutil.move(f, new_f)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to rename."
+        else:
+            return f"{f} has been renamed to {parsers.pretify_path(os.path.dirname(new_f))}." if full else f"{basename} has been renamed to {new_name}."
+    if os.path.isdir(f):
+        try:
+            shutil.copytree(f, new_f)
+            shutil.rmtree(f)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to rename."
+        else:
+            return f"{f} has been renamed to {parsers.pretify_path(os.path.dirname(new_f))}." if full else f"{basename} has been renamed to {new_name}."
+
+def delete(f, confirm=False):
+    f = f.strip()
+    if f == "selected":
+        n = len(configs.selected)
+        confirm = input(f"Confirm about deleting {n} item{'s' if n > 1 else ''} permanently?(y/n): ").strip().lower() == "y"
+        if not confirm:
+            return ''
+        did, failed = 0, 0
+        for item in configs.selected.copy():
+            if "has been deleted" not in delete(item, True):
+                failed += 1
+            else:
+                did += 1
+            configs.selected.remove(item)
+        if failed:
+            return f"Failed to delete {failed} item{'s' if failed > 1 else ''}."
+        else:
+            return f"{did} item{'s' if did > 1 else ''} has been deleted."
+    if not os.path.exists(f):
+        return "No such file or directory."
+    if not parsers.is_accessable(f):
+        return "Access denied."
+    f = parsers.real_path(f)
+    if not confirm:
+        confirm = input(f"Confirm about deleting {parsers.split_path(f)[-1]} permanently?(y/n): ").strip().lower() == "y"
+        if not confirm:
+            return ''
+    if os.path.isfile(f):
+        try:
+            os.unlink(f)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to delete."
+        else:
+            return f"{f} has been deleted."
+    if os.path.isdir(f):
+        try:
+            shutil.rmtree(f)
+        except Exception as exc:
+            logger.error(exc)
+            return "Failed to delete."
+        else:
+            return f"{f} has been deleted."
+
+def set_time(f, t, w="m"):
+    if f == "selected":
+        n = len(configs.selected)
+        did, failed = 0, 0
+        for item in configs.selected:
+            if "Failed to update" in set_time(item, t, w):
+                failed += 1
+            else:
+                did += 1
+        p = "modification" if w == 'm' else "access"
+        if failed:
+            return f"Failed to update {p} time of {failed} item{'s' if failed > 1 else ''}."
+        else:
+            return f"Updated {p} time of {did} item{'s' if did > 1 else ''} has been deleted."
+    if not os.path.exists(f):
+        return "No such file or directory."
+    if not parsers.is_accessable(f):
+        return "Access denied."
+    t = t.replace("now", datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+    t = t.replace("today", parsers.today.strftime("%d-%m-%Y"))
+    t = t.replace("today", datetime.datetime.fromtimestamp(parsers.today.timestamp() - 86400).strftime("%d-%m-%Y"))
+    logger.debug(t)
+    pat = r"(\d{1,2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{1,4})(?:\s+(\d{1,2})(?:\s*:\s*(\d{1,2})(?:\s*:\s*(\d{1,2}))?)?)?"
+    date = re.search(pat, t)
+    if date is None:
+        return "Invalid date."
+    timetuple = list(date.groups())
+    for i in range(len(timetuple)):
+        if timetuple[i] is None:
+            timetuple[i] = "00"
+    prettydate = "{}-{}-{} {}:{}:{}".format(*timetuple)
+    fmt = "%d-%m-%Y %H:%M:%S" if len(timetuple[2]) > 2 else "%d-%m-%y %H:%M:%S"
+    timestamp = datetime.datetime.strptime(prettydate, fmt).timestamp()
+    logger.debug(parsers.pretify_timestamp(timestamp))
+    atime, mtime = os.path.getatime(f), os.path.getmtime(f)
+    if w == "m":
+        mtime = timestamp
+        p = "modification"
+    elif w == "a":
+        atime = timestamp
+        p = "access"
+    try:
+        os.utime(f, (atime, mtime))
+    except:
+        return "Failed to update " + p + " time."
+    return p.title() + " time of " + parsers.pretify_path(os.path.abspath(f)) + " set to " + parsers.pretify_timestamp(timestamp, "%d %B %Y %I:%M:%S %p") + "."
 
 def dirmap(dr=None, visitor=''):
     if visitor:
@@ -1331,6 +1553,11 @@ tasks = {
     "details": details,
     "how to": lambda topic: helps.example if topic == "share" else none(),
     "share this": share_this,
+    "copy": copy,
+    "move": move,
+    "delete": delete,
+    "rename": rename,
+    "set": set_time,
 }
 tasks = collections.defaultdict(lambda : none, tasks)
 
@@ -1584,4 +1811,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611210373
+#updated: 1611333254

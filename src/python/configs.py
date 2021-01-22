@@ -31,7 +31,7 @@ BODY_SIZE = 2048
 DECREASE = BODY_SIZE // 16 
 BUFFER_SIZE = BODY_SIZE + HEADER_SIZE
 ABOUT = """Project: Congregate Devices.
-Last Updated Thursday, 21 January 2021, 12:27 PM
+Last Updated Friday, 22 January 2021, 11:07 PM
 About Author:
     Name: Rajin Alim.
     Age: 17 (at the time of doing this project)
@@ -41,7 +41,7 @@ About Author:
     Gmail: rajin7118@gmail.com
 Words from author: \"The purpose of this project is same as it's name, to Congregate multiple devices, to share files and folders among them.This project was done by a learner, so it is not usual to face errors.In case you face any error, please contact me.And also, consider leaving a review through my gmail.I would love to hear from you.Enjoy yourself, live your life, chase your dreams, take care of your dear ones, keep me in your prayers.\""""
 ESSSENTIAL_KEYS = ['name', 'joined', 'protected', 'history', 'total_time', 'joined_n', 'hosted_n', 'total_sent', 'total_received', 'data_path', 'total_commands', 'invalid_commands', 'home_dir', 'project_dir', 'sending_sessions', 'receiving_sessions', "command_records", "times_launched"]
-ALL_COMMANDS = ['pwd', 'ls', 'cd', 'dirmap', 'select', 'unselect', 'search', 'protect', 'unprotect', 'username', 'start', 'join', 'chat', 'visit', 'return', 'share', 'share with', 'collect', 'cancel', 'view', 'share status', 'kick', 'throw', 'clear', 'leave', 'close', 'help', 'share this', 'how to', 'about', 'exit', 'details']
+ALL_COMMANDS = ['pwd', 'ls', 'cd', 'dirmap', 'select', 'unselect', 'search', 'protect', 'unprotect', 'username', 'start', 'join', 'chat', 'visit', 'return', 'share', 'share with', 'collect', 'cancel', 'view', 'share status', 'kick', 'throw', 'clear', 'leave', 'close', 'help', 'share this', 'how to', 'about', 'exit', 'details', 'set', 'copy', 'move', 'delete', 'rename']
 
 joined = False 
 active_ports = [] 
@@ -127,4 +127,4 @@ os.chdir(data['home_dir'])
 
 
 #name: configs.py
-#updated: 1611160504
+#updated: 1611332782

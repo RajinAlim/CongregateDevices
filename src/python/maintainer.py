@@ -16,16 +16,25 @@ ESSENTIALS = {
 project_dir = None
 github_maintainer_link = "https://github.com/RajinAlim/CongregateDevices/blob/main/src/python/maintainer.py"
 github_link = lambda path: f"https://github.com/RajinAlim/CongregateDevices/blob/main/{path}"
-
+titles = {
+    "main.py": "main.py",
+    "README.txt": "README.txt",
+    "assets.py": "src/python/assets.py",
+    "executor.py": "src/python/executor.py",
+    "helps.py": "src/python/helps.py",
+    "parsers.py": "src/python/parsers.py",
+    "maintainer.py": "src/python/maintainer.py",
+    "configs.py": "src/python/configs.py"
+}
 update_history = {
     "src/python/assets.py": 1611150762,
-    "src/python/configs.py": 1611151020,
-    "src/python/executor.py": 1611150762,
-    "src/python/helps.py": 1611150762,
-    "src/python/parsers.py": 1611150762,
-    "src/python/maintainer.py": 1611150762,
-    "main.py": 1611150762,
-    "README.txt": 1611150762,
+    "src/python/configs.py": 1611332782,
+    "src/python/executor.py": 1611333254,
+    "src/python/helps.py": 1611334866,
+    "src/python/parsers.py": 1611332650,
+    "src/python/maintainer.py": 1611335225,
+    "main.py": 1611313614,
+    "README.txt": 1611293247,
     "clear_data": []
 }
 
@@ -82,7 +91,6 @@ def traverse_dir(path: str, depth=-1):
         if os.path.isfile(f):
             yield os.path.abspath(f)
         elif depth < 0 or depth != 0:
-            yield os.path.abspath(f) + os.sep
             yield from traverse_dir(f, depth - 1)
     os.chdir(prev_wd)
 
@@ -236,35 +244,41 @@ def organize(start=".."):
     if project_dir is None:
         os.makedirs("CongregateDevices", exist_ok=True)
         project_dir = os.path.abspath("CongregateDevices")
-    missing = [file for path in ESSENTIALS for file in ESSENTIALS[path]]
+    for path in ESSENTIALS:
+        full_path = os.path.join(project_dir, path)
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
     paths = {file: os.path.join(project_dir, path) for path in ESSENTIALS for file in ESSENTIALS[path]}
-    for item in list(traverse_dir(start)):
-        if os.path.splitext(item)[1] not in (".py", ".txt"):
+    missing = [file for path in ESSENTIALS for file in ESSENTIALS[path]]
+    for item in traverse_dir(start):
+        ext = os.path.splitext(item)[1].replace(".", "").strip()
+        if ext not in ("py", "txt") or not missing:
             continue
         with open(item) as f:
             data = fetch_data(f.read())
         if data is None:
             continue
-        name = data[0]
-        target_path = paths.get(name)
-        if target_path is None:
+        name, updated = data
+        if name not in missing:
             continue
-        if not os.path.exists(target_path):
-            os.makedirs(target_path)
-        target_path = os.path.join(target_path, name)
-        if os.path.exists(target_path):
-            with open(target_path) as f:
-                old_data = fetch_data(f.read())
-            if old_data is not None:
-                if old_data[1] >= data[1] or os.path.samefile(item, target_path):
-                    if name in missing:
-                        missing.remove(name)
-                    continue
-        shutil.move(item, target_path)
-        if name in missing:
+        title = titles[name]
+        path = title.replace("/", os.sep) 
+        path = os.path.join(project_dir, path)
+        if os.path.exists(path):
+            if os.path.samefile(item, path):
+                continue
+            with open(path) as f:
+                existing_data = fetch_data(f.read())
+            if existing_data and existing_data[1] > updated:
+                os.unlink(item)
+                missing.remove(name)
+                continue
+            os.unlink(path)
+            shutil.move(item, path)
             missing.remove(name)
-    if is_organized():
-        missing.clear()
+        elif updated >= update_history[title]:
+            shutil.move(item, path)
+            missing.remove(name)
     return missing
 
 def finish_up():
@@ -323,4 +337,4 @@ if __name__ =="__main__":
 
 
 #name: maintainer.py
-#updated: 1611150762
+#updated: 1611335225

@@ -9,26 +9,20 @@ try:
 except ImportError as exc:
     try:
         import maintainer
-        missing = maintainer.organize()
+        missing = maintainer.organize(".")
         if not missing:
-            print(f"All files have been organized accordingly.You are ready to use this programme! You just have to reopen (or rerun) 'main.py'.\nFrom now, when you want to use this programme, you have to run 'main.py' file which is located at '{maintainer.project_dir.replace('/storage/emulated/0', 'Internal Storage')}' folder.")
+            print(f"All files have been organized accordingly.You are ready to use this programme! You just have to reopen (or rerun) 'main.py'.\nFrom now, when you want to use this programme, you have to run 'main.py' file which is located at \"{maintainer.project_dir.replace('/storage/emulated/0', 'Internal Storage')}\" folder.")
             print("Exiting programme. Please reopen (or rerun) 'main.py'.")
             sys.exit()
-        maintainer.congregate_files(".")
-        try:
-            shutil.rmtree(maintainer.project_dir)
-        except:
-            pass
         print("Some essential files are missing: \n    ", "\n    ".join(map(os.path.basename, missing)), sep="")
         download = input("Download them?(y/n): ").strip().lower() == "y"
         if download:
             downloaded = 0
             failed = 0
             for file in missing:
-                for p, files in maintainer.ESSENTIALS.items():
-                    if file in files:
-                        title = "/".join((p, file)) if p else file
-                path = maintainer.download_file(title, ".")
+                title = maintainer.titles[file]
+                path = os.path.join(maintainer.project_dir, title.replace("/", os.sep))
+                path = maintainer.download_file(title, os.path.dirname(path))
                 if path is None:
                     failed += 1
                     print("Failed to download", file)
@@ -38,8 +32,7 @@ except ImportError as exc:
             if failed > 0:
                 print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Download {'them' if failed > 1 else 'it'} manually from 'https://drive.google.com/folderview?id=1-XeM32MuvnqhXOmda4uIU004iJsqXMII' or try again later.")
             if failed == 0:
-                maintainer.organize()
-                print(f"All missing files were successfully downloaded! You have to reopen 'main.py'.\nFrom now, when you want to use this programme, you have to run 'main.py' file which is located at '{maintainer.project_dir.replace('/storage/emulated/0', 'Internal Storage')}' folder.")
+                print(f"All missing files were successfully downloaded! You have to reopen 'main.py'.\nFrom now, when you want to use this programme, you have to run 'main.py' file which is located at \"{maintainer.project_dir.replace('/storage/emulated/0', 'Internal Storage')}\" folder.")
                 print("Exiting programme. Please reopen (or rerun) 'main.py'.")
             sys.exit()
         else:
@@ -68,18 +61,23 @@ except ImportError as exc:
         downloaded = 0
         failed = 0
         for file in missing:
-            for p, files in maintainer.ESSENTIALS.items():
-                if file in files:
-                    title = "/".join((p, file)) if p else file
-            path = maintainer.download_file(title, ".")
-            if path is None:
-                failed += 1
-                print("Failed to download", file)
+            title = maintainer.titles[file]
+            path = title.replace("/", os.sep)
+            for p in maintainer.ESSENTIALS:
+                if file in maintainer.ESSENTIALS[p]:
+                    path = p
+                    break
             else:
-                downloaded += 1
+                title = ""
+                path = "."
+            path = os.path.join(maintainer.project_dir, path)
+            path = maintainer.download_file(title, path)
+            if path is None:
+                print("Failed to download", file)
+                failed += 1
+            else:
                 print("Downloaded", file)
-                real_path = os.path.join(maintainer.project_dir ,*title.split("/"))
-                shutil.move(path, real_path)
+                downloaded += 1
         if failed > 0:
             print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Download {'them' if failed > 1 else 'it'} manually from 'https://drive.google.com/drive/folders/10TGK4auocqd7sYTlOhwRDmd_c2t8cRxf' or try again later.")
             sys.exit()
@@ -161,8 +159,8 @@ while True:
 
 """Project: Congregate Devices.
 Author: Rajin Alim.
-Last Updated Thursday, 21 January 2021, 12:27 PM"""
+Last Updated Friday, 22 January 2021, 11:07 PM"""
 
 
 #name: main.py
-#updated: 1611210011
+#updated: 1611313614

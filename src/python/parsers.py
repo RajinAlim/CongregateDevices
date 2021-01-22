@@ -43,6 +43,18 @@ all_patterns = (
     re.compile(r"(?P<cmd>\bpwd\b)"),
     re.compile(r"(?P<cmd>\bdirmap)\s*?(?P<arg>.+)?"),
     re.compile(r"(?P<cmd>\bls\b)"),
+    re.compile(r"(?P<cmd>\bcopy)\s*(?P<arg>.+?)\s+to\s*(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>\bmove)\s*(?P<arg>.+?)\s+to\s*(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>\brename)\s*(?P<arg>.+?)\s+to\s*(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>\bdelete)\s*(?P<arg>.+)"),
+    re.compile(r"""(?P<cmd>\bset)\s*
+(?P<subarg1>[ma])?\s*
+(?P<arg>\S+?)\s+
+(?P<subarg0>
+(?:now|today|yesterday|\d\d[-./]\d\d[-./]\d{2,4})\s*
+(?:\d\d(?::\d\d(?::\d\d))?)?
+)
+""", re.VERBOSE),
     re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)in(?:\s|[^:])+(?P<subarg>.+)"),
     re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\breturn\b)"),
@@ -371,7 +383,13 @@ def pretify_time(seconds):
     return as_str
 
 def is_accessable(path, for_visitor=False):
+    logger.debug(path)
+    if not os.path.exists(path):
+        return False
     if not for_visitor:
+        if os.path.isfile(path):
+            dirname = os.path.dirname(os.path.abspath(path))
+            return not dirname or is_accessable(dirname)
         try:
             cwd = os.getcwd()
             os.chdir(path)
@@ -596,24 +614,16 @@ def parse_command(cmd_str):
     for pattern in all_patterns:
         match = pattern.fullmatch(cmd_str)
         if match:
-            groups = match.groups()
-            command = match.group("cmd")
-            try:
-                sub_cmd = match.group("subcmd")
-                command += " " + sub_cmd
-            except:
-                pass
-            try:
-                args.append(match.group("arg"))
-            except:
-                pass
-            try:
-                sub_arg = match.group("subarg")
-                args.append(sub_arg)
-            except:
-                pass
-            if len(groups) > 2 + len(args):
-                args = args + list(groups[len(groups) - 1:])
+            groups = match.groupdict()
+            for grp in sorted(groups):
+                if groups[grp] is None:
+                    continue
+                if grp == "cmd":
+                    command = groups[grp]
+                elif grp.startswith("subcmd"):
+                    command += " " + groups[grp]
+                elif "arg" in grp:
+                    args.append(groups[grp])
             while None in args:
                 args.remove(None)
             return (command, args)
@@ -685,7 +695,7 @@ def flexible_select(f, items=None, return_exact=False):
         logger.warning(("time", match.group(), f))
         start, end = times['time1'], times['time2']
         if "now" in start:
-            start = now.timestamp()
+            start = datetime.datetime.now.timestamp()
             if end is None:
                 end = start + 1
         elif "today" in start:
@@ -749,7 +759,7 @@ def flexible_select(f, items=None, return_exact=False):
         if type(end) is float:
             pass
         elif "now" in end:
-            end = now.timestamp()
+            end = datetime.datetime.now.timestamp()
         elif "today" in end:
             m = re.search(r"(\d{2})(?::(\d{2})(?::(\d{2}))?)?", end)
             extras = 0
@@ -977,4 +987,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1611160320
+#updated: 1611332650
