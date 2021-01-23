@@ -30,7 +30,7 @@ except ImportError as exc:
                     downloaded += 1
                     print("Downloaded", file)
             if failed > 0:
-                print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Download {'them' if failed > 1 else 'it'} manually from 'https://drive.google.com/folderview?id=1-XeM32MuvnqhXOmda4uIU004iJsqXMII' or try again later.")
+                print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Please check your internet connnection and try again.")
             if failed == 0:
                 print(f"All missing files were successfully downloaded! You have to reopen 'main.py'.\nFrom now, when you want to use this programme, you have to run 'main.py' file which is located at \"{maintainer.project_dir.replace('/storage/emulated/0', 'Internal Storage')}\" folder.")
                 print("Exiting programme. Please reopen (or rerun) 'main.py'.")
@@ -38,8 +38,7 @@ except ImportError as exc:
         else:
             print("Unable to continue without these files.")
             sys.exit()
-    except ImportError as exc:
-        print("Unable to find a very important file. Please manually download all the files from", "https://drive.google.com/folderview?id=1-XeM32MuvnqhXOmda4uIU004iJsqXMII")
+    except ImportError:
         sys.exit()
 try:
     from src.python import configs
@@ -79,7 +78,7 @@ except ImportError as exc:
                 print("Downloaded", file)
                 downloaded += 1
         if failed > 0:
-            print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Download {'them' if failed > 1 else 'it'} manually from 'https://drive.google.com/drive/folders/10TGK4auocqd7sYTlOhwRDmd_c2t8cRxf' or try again later.")
+            print(f"Failed to download {failed} file{'s' if failed > 1 else ''}. Check your internet connnection and try again.")
             sys.exit()
         else:
             print("All missing files were successfully downloaded! You have to reopen 'main.py'.\nFrom now, when you want to use this programme, you have to run 'main.py' file which is located at '{maintainer.project_dir.replace('/storage/emulated/0', 'Internal Storage')}' folder.")

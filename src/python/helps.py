@@ -296,11 +296,10 @@ formats = {
 }
 
 def share_this(path):
-    drive_link = "https://drive.google.com/drive/folders/10TGK4auocqd7sYTlOhwRDmd_c2t8cRxf"
     github_link = "https://github.com/RajinAlim/CongregateDevices"
     print("To use this programme all requirements are the files of this project and any way to run python script.\nFirst let's talk about the second requirement, way to run python script.\nTo run python script in Android phones, QpythonL is probably smallest app. Open Play Store and search 'QpythonL' and download the first one of search results. On other devices, do search for 'how to run python in {os}' ({os} should be whatever operating system you are using) on Youtube.")
-    print(f"Let's talk about the second requirement, the files.\nThe files of this programme can be downloaded from Google Drive or Github. Link for both is below:\nGoogle drive link: {drive_link}\nGithub repostory link: {github_link}.\n\nIf you want to do this without Internet, it's okay.Here's how this can be done:")
-    print(f"All the files of the project is copied at '{pretify_path(path)}' folder. Share those file (all files in '{path}' folder) with the person you want to share the programme with. You can use Bluetooth or any other way to share those files. Note that QpythonL (or any app to run python) must be installed either from Play Store or anywhere else.")
+    print(f"Let's talk about the second requirement, the files.\nThe files of this programme can be downloaded from Github. Link is below:\nGithub repostory link: {github_link}.\nYou can also go to 'https://drive.google.com/folderview?id=1084TXs3N2xEahd64NB-2K-NGfM-29ttK' and download the 'CongregateDevices.py' file and run it with internet connection, this will manage all for you.\nIf you want to do this without Internet, it's okay.Here's how this can be done:")
+    print(f"All the files of the project is copied at '{pretify_path(path)}' folder. Share those file (all files in '{path}' folder) with the person you want to share the programme with. You can use Bluetooth or any other way to share those files (or download them from drive or github as mentioned above). Note that QpythonL (or any app to run python) must be installed either from Play Store or anywhere else.")
     print("Once the files of the programme is shared or downloaded in a device, the next task is to run the 'main.py' file in any way you like, in Android phones, using QPythonL or Pydroid3 or any other app that can run python. (if you are using QpythonL, then you can watch this video on youtube: https://youtu.be/XD0N-ZMNfFQ).Then Done!")
 
 def help(topic=None):
