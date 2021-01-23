@@ -1305,7 +1305,8 @@ def view(topic, visitor=''):
                 output_str.append(f"Number of running sending sessions(including the completed ones): {len(assets.senders)}")
             if assets.receivers:
                 output_str.append(f"Number of running receiving sessions(including the completed ones): {len(assets.receivers)}")
-        output_str.append("\nRecords:")
+        output_str.append(f"\nLength of this session: {parsers.pretify_time(datetime.datetime.now().timestamp() - parsers.now.timestamp())}")
+        output_str.append("Records:")
         output_str.append(f"Total time spent in using this programme: {parsers.pretify_time(configs.data['total_time'])}.")
         output_str.append(f"Number of times this programme was launched/run: {configs.data['times_launched']}")
         joined, hosted = configs.data['joined_n'], configs.data['hosted_n']
