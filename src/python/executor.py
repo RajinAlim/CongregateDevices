@@ -145,6 +145,8 @@ def join(server_id, controlled=False):
 
 def check():
     for data in configs.data["history"]:
+        if data[1] == "You":
+            continue
         zone_id = data[0]
         res = [None]
         def connect():
@@ -527,7 +529,7 @@ def cd(dr, visitor=''):
                 os.chdir(cwd)
                 assets.lock.release()
                 return "Current working directory: " + parsers.pretify_path(items[0])
-        if os.path.exists(dr):
+        if os.path.isdir(dr):
             if not parsers.is_accessable(dr, True):
                 return "Directory is not accessable."
             if os.path.abspath(dr) not in configs.data['protected']:
@@ -575,7 +577,7 @@ def cd(dr, visitor=''):
                     os.chdir(cwd)
                     assets.lock.release()
                     return 'Current working directory: ' + parsers.pretify_path(assets.visitors_data[visitor]['wd'])
-    if os.path.exists(dr):
+    if os.path.isdir(dr):
         if not parsers.is_accessable(dr):
             return "Directory is not accessable."
         abspath = os.path.abspath(dr)
@@ -994,7 +996,8 @@ def details(f, visitor=""):
     return details_str
 
 def select(f, visitor=''):
-    parsers.real_path(f = f.strip())
+    f = parsers.real_path(f.strip())
+    print(f)
     if visitor:
         cwd = os.getcwd()
         os.chdir(assets.visitors_data[visitor]['wd'])
@@ -1845,4 +1848,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611560505
+#updated: 1611563009

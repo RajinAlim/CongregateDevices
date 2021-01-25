@@ -37,7 +37,7 @@ all_patterns = (
     re.compile(r"(?P<cmd>\bkick)\s*?(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bhelp)\s*?(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bhelp\b)"),
-    re.compile(r"(?P<cmd>\bcd)\s*?(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>\bcd)\s+(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bhome)\s+?(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\bhome\b)"),
     re.compile(r"(?P<cmd>\bpwd\b)"),
@@ -987,4 +987,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1611332650
+#updated: 1611562676
