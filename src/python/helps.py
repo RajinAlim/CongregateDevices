@@ -262,7 +262,7 @@ formats = {
     "cd": "cd {directory}",
     "copy": "copy {item} to {destination} copy selected to {destination",
     "move": "move {item} to {destination}, move selected to {destination}",
-    "rename": "rename {item} to {new name}",
+    "rename": "rename {item} to {new name}, rename selected to n{regular expression of name} nn:{expression to substitute}",
     "delete": "delete {item}, delete selected",
     "dirmap": "dirmap, dirmap {directory}",
     "details": "details {item}",
@@ -325,4 +325,4 @@ def help(topic=None):
 
 
 #name: helps.py
-#updated: 1611334866
+#updated: 1611561513

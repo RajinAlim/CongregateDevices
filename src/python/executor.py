@@ -621,7 +621,7 @@ def copy(f, location):
         if confirm:
             pass
         else:
-            return ''
+            return 'Copying cancelled due to presence of item with same name.'
     if os.path.isfile(f):
         try:
             shutil.copy2(f, location)
@@ -665,7 +665,7 @@ def move(f, location):
         if confirm:
             pass
         else:
-            return ''
+            return 'Moving cancelled due to presence of item with same name.'
     if os.path.isfile(f):
         try:
             shutil.move(f, location)
@@ -686,10 +686,41 @@ def move(f, location):
 
 def rename(f, new_name):
     f = f.strip()
+    if f == "selected":
+        pat = r"(?:n:(.+)\s+)?nn:(.+)"
+        logger.debug((f, new_name))
+        match = re.search(pat, new_name)
+        logger.debug(match)
+        if match:
+            try:
+                return_str = []
+                did, failed = 0, 0
+                name_pat = match.group(1)
+                name_pat = '.*' if name_pat is None else name_pat
+                name_pat = re.compile(name_pat)
+                for item in configs.selected:
+                    name = parsers.split_path(item)[-1]
+                    try:
+                        new_name = name_pat.sub(match.group(2), name)
+                    except Exception as exc:
+                        logger.error(exc)
+                        continue
+                    logger.debug(new_name)
+                    res = rename(item, new_name)
+                    logger.debug("hello")
+                    if "has been renamed to" in res:
+                        return_str.append(res)
+                    else:
+                        return_str.append(f"Failed to rename {name}: {res}")
+                return '\n'.join(return_str)
+            except Exception as exc:
+                logger.error(exc)
     if not os.path.exists(f):
         return "No such file or directory."
+    logger.debug("Exists")
     if not parsers.is_accessable(f):
         return "Access denied."
+    logger.debug("Accessable")
     f = parsers.real_path(f)
     full = os.path.isabs(f)
     f = os.path.abspath(f)
@@ -698,11 +729,13 @@ def rename(f, new_name):
     parts[-1] = new_name
     new_f = os.path.join(*parts)
     if os.path.exists(new_f):
+        if os.path.samefile(full, new_f):
+            return "New name must be different from the previous one."
         confirm = input(f"There is already an item named {new_name}. Overwrite it?(y/n): ").strip().lower() == "y"
         if confirm:
             pass
         else:
-            return ''
+            return 'Renaming cancelled due to presence of item with same name.'
     if os.path.isfile(f):
         try:
             shutil.move(f, new_f)
@@ -710,7 +743,7 @@ def rename(f, new_name):
             logger.error(exc)
             return "Failed to rename."
         else:
-            return f"{f} has been renamed to {parsers.pretify_path(os.path.dirname(new_f))}." if full else f"{basename} has been renamed to {new_name}."
+            return f"{f} has been renamed to {parsers.pretify_path(new_f)}." if full else f"{basename} has been renamed to {new_name}."
     if os.path.isdir(f):
         try:
             shutil.copytree(f, new_f)
@@ -719,7 +752,7 @@ def rename(f, new_name):
             logger.error(exc)
             return "Failed to rename."
         else:
-            return f"{f} has been renamed to {parsers.pretify_path(os.path.dirname(new_f))}." if full else f"{basename} has been renamed to {new_name}."
+            return f"{f} has been renamed to {parsers.pretify_path(new_f)}." if full else f"{basename} has been renamed to {new_name}."
 
 def delete(f, confirm=False):
     f = f.strip()
@@ -1641,7 +1674,7 @@ def execute(cmd):
         logger.debug((cm, args))
         if cm == "visit":
             output = "Already Visiting " + configs.visiting
-        elif cm in ("share with", "share", "protect", "unprotect", "clear", "kick", "search") or (cm == "username" and args) or (cm == "view" and args != ["selected"]):
+        elif cm in ("share with", "share", "protect", "unprotect", "clear", "kick", "search", "copy", "move", "rename", "delete", "delete", "set") or (cm == "username" and args) or (cm == "view" and args != ["selected"]):
             output = "This command is not runnable while visiting"
         elif cm not in tasks:
             output = "Invalid Command!!"
@@ -1812,4 +1845,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611333254
+#updated: 1611560505
