@@ -997,7 +997,6 @@ def details(f, visitor=""):
 
 def select(f, visitor=''):
     f = parsers.real_path(f.strip())
-    print(f)
     if visitor:
         cwd = os.getcwd()
         os.chdir(assets.visitors_data[visitor]['wd'])
