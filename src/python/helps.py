@@ -22,6 +22,7 @@ helps = {
     "rename": "Run 'rename {item} to {new name}' command to rename the {item} to {new name}.",
     "delete": "Run 'delete {item}' to delete {item}, here item can be any accessable file or folder.\nRun 'delete selected' to delete the selected items.\nNote that once any file or folder is deleted, it can't be retreived.",
     "dirmap": "Run 'dirmap' to get a visual representation of your working directory.\nRun 'dirmap {directory}' to get visual representation of any directory.",
+    "diff": "Run 'diff {date1} {date2} to get time difference between {date1} and {date2}, here {date1} and {date2} should be 'today', 'now', 'yesterday' or any date in 'DD-MM-YYYY' format",
     "details": "Run 'details {item}' command to get some basic details about any file or folder.",
     "set": "Run 'set {'m'(to change modification time) or 'a'(to change access time), optional, defaults to 'm'} {item} {time}' to update the last access or modification of {item}, {time} should the date and time, date format is DD-MM-YYYY(you can also use 'now', 'today' or 'yesterday' as shortcut) and time format is HH:MM:SS time is optional.",
     "select": """Run 'select {item}' command to select any item, here {item} can be any file or folder.\nRun 'select all' command to select everything in your current working directory.
@@ -83,6 +84,20 @@ format: 's:{minimum size}-{maximum size}'
 description: this condition will match all files which sizes are between {minimum size} and {maximum size}
 examples:
 =>'s:5mb-10mb' will match any files which's size is more than or equal to 5mb and less than or equal to 10mbl
+
+old:
+prefix: 'old'
+format: 'old:{n}'
+description: this condition will match the oldest {n} items.
+examples:
+=>'old:5' will the 5 oldest items.
+
+new:
+prefix: 'new'
+format: 'new:{n}'
+description: this condition will match the newest {n} items.
+examples:
+=>'new:5' will the 5 newest items.
 
 type:
 prefix: 'tp:' / 'type:'
@@ -187,6 +202,20 @@ description: this condition will match all files which sizes are between {minimu
 examples:
 =>'s:5mb-10mb' will match any files which's size is more than or equal to 5mb and less than or equal to 10mbl
 
+old:
+prefix: 'old'
+format: 'old:{n}'
+description: this condition will match the oldest {n} items.
+examples:
+=>'old:5' will the 5 oldest items.
+
+new:
+prefix: 'new'
+format: 'new:{n}'
+description: this condition will match the newest {n} items.
+examples:
+=>'new:5' will the 5 newest items.
+
 type:
 prefix: 'tp:' / 'type:'
 format: 'tp:{extension}/image/photo/audio/video/file/folder/directory'
@@ -265,6 +294,7 @@ formats = {
     "rename": "rename {item} to {new name}, rename selected to n{regular expression of name} nn:{expression to substitute}",
     "delete": "delete {item}, delete selected",
     "dirmap": "dirmap, dirmap {directory}",
+    "diff": "diff {date1} {date2}",
     "details": "details {item}",
     "select": "select {item}, select all, select {conditions}",
     "unselect": "unselect {item}, unselect all, unselect {n}, unselect {m}-{n}, unselect {m} {n} {o} {p}...",
@@ -325,4 +355,4 @@ def help(topic=None):
 
 
 #name: helps.py
-#updated: 1611561513
+#updated: 1612116842

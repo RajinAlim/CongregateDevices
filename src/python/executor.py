@@ -214,7 +214,6 @@ def leave(confirm=False):
     return "Left from Zone."
 
 def zone_info(return_dict=False):
-    
     if not configs.running:
         return "You are not in any Zone."
     req = {
@@ -485,6 +484,35 @@ def visit(dest):
         return "No such member found in Zone."
     elif status == "403":
         return "Visit has been denied by " + dest + "."
+
+@parsers.cache
+def difference(i1, i2):
+    date_pat = re.compile(r"(today|yesterday|now|\d\d-\d\d-\d{2,4})")
+    d1 = date_pat.search(i1)
+    d2 = date_pat.search(i2)
+    if d1 is None or d2 is None:
+        return "Invalid date."
+    t1 = t2 = None
+    if d1.group(1) == "today":
+        t1 = parsers.today.timestamp()
+    elif d1.group(1) == "yesterday":
+        t1 = parsers.today.timestamp() - 86400
+    elif d1.group(1) == "now":
+        t1 = datetime.datetime.now().timestamp()
+    else:
+        fmt = "%d-%m-%y" if len(d1.group(1).split("-")[-1]) == 2 else "%d-%m-%Y"
+        t1 = datetime.datetime.strptime(d1.group(1), fmt).timestamp()
+    if d2.group(1) == "today":
+        t2 = parsers.today.timestamp()
+    elif d2.group(1) == "yesterday":
+        t2 = parsers.today.timestamp() - 86400
+    elif d2.group(1) == "now":
+        t2 = datetime.datetime.now().timestamp()
+    else:
+        fmt = "%d-%m-%y" if len(d2.group(1).split("-")[-1]) == 2 else "%d-%m-%Y"
+        t2 = datetime.datetime.strptime(d2.group(1), fmt).timestamp()
+    diff = abs(t2 - t1)
+    return parsers.pretify_time(diff)
 
 def pwd(visitor=''):
     if visitor:
@@ -1124,8 +1152,10 @@ def unselect(f, visitor=''):
     return ""
 
 def search(f, location=None, visitor=""):
+    logger.debug((f, location))
     if location is None:
         if os.path.exists("/storage"):
+            logger.debug("Hello World")
             if not visitor:
                 print("Searching the whole phone...might take a while....")
             try:
@@ -1562,6 +1592,7 @@ tasks = {
     "unselect": unselect,
     "start": start,
     "close": close,
+    "diff": difference,
     "join": join,
     "zone info": zone_info,
     "chat": chat,
@@ -1648,6 +1679,7 @@ def serve_visitors():
     assets.service_running = False
 
 def execute(cmd):
+    logger.debug(cmd)
     global n_cmd
     n_cmd += 1
     shortcut = False
@@ -1659,6 +1691,7 @@ def execute(cmd):
     if cmd == "status":
         cmd = "view status"
     cm, args = parsers.parse_command(cmd)
+    logger.debug((cm, args))
     if cm in configs.data["command_records"]:
         configs.data["command_records"][cm] += 1
         configs.data['total_commands'] += 1
@@ -1847,4 +1880,4 @@ def execute(cmd):
 
 
 #name: executor.py
-#updated: 1611563009
+#updated: 1612148766

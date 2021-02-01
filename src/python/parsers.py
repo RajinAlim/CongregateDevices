@@ -55,7 +55,9 @@ all_patterns = (
 (?:\d\d(?::\d\d(?::\d\d))?)?
 )
 """, re.VERBOSE),
-    re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)in(?:\s|[^:])+(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>search)\s+(?P<arg>.+)\s+in\s*(?P<subarg>.+)"),
+    re.compile(r"(?P<cmd>\bsearch)\s+(?P<arg>.+)"),
+    re.compile(r"(?P<cmd>diff)(?:erence)?\s*(?P<arg>.+)\s+(?P<subarg>.+)"),
     re.compile(r"(?P<cmd>\bsearch)\s*(?P<arg>.+)"),
     re.compile(r"(?P<cmd>\breturn\b)"),
     re.compile(r"(?P<cmd>\babout\b)"),
@@ -81,14 +83,15 @@ time_pat = re.compile(r"""
 )?\b
 """, re.VERBOSE) #tm:(now|today|yesterday|dd-mm-yyyy (hh:mm:ss)?)(-now|today|yesterday|dd-mm-yyyy (hh:mm:ss)?)? #5
 timelimit_pat = re.compile(r"\bin:(\d+)([YyMmWwDdHhSs]|min|Min|MIN)\b") #in:{n}[yYmMdYHhsS]|min|Min|MIN #8
+age_pat = re.compile(r"\b(new|old):(\d+)") #new|old:n #9
 item_pat = re.compile(r"\b(?:i|item):(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #(i|item):n|m,n,o...|m-p #7
 kw_pat1 = re.compile(r"\b('.+?'|\".+?\")\b") #'...'|".." #1
-kw_pat2 = re.compile(r"([^\s\n\t]+)") #..... #10
+kw_pat2 = re.compile(r"([^\s\n\t]+)") #..... #11
 range_pat = re.compile(r"\bcons(?:ider)?:(\d+\s*-\s*\d+|\d+(?:[\s,]+\d+)*)\b") #cons:(m-p|m, n, o, p) #3
 takeonly_pat = re.compile(r"\b(?:tp|type):(photo|image|audio|video|doc|\.[\d\w_]+|file|folder|dir)(?:ectory)?\b") #type:photo|image|audio|video|doc|file|folder|dir|{extention} #6
 count_pat = re.compile(r"\b(?:t|take):(f|l|\d+)?-(\d+)\b") #t:f-n|-n|l-n|m-n #6
 ignore_pat = re.compile(r"\b(?:ign|ignore):(.+)$") #ignore:.....$ #2
-size_pat = re.compile(r"\b(?:s|size):(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?)(?:\s*-\s*(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?))?") #s:{n}b|kb|mb|gb|-{n}b|kb|mb|gb| #9
+size_pat = re.compile(r"\b(?:s|size):(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?)(?:\s*-\s*(\d+(?:\.\d+)?(?:b|kb|mb|gb|B|KB|MB|GB)?))?") #s:{n}b|kb|mb|gb|-{n}b|kb|mb|gb| #10
 
 image_ext = ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "raw", "webp", "tif", "psg", "dds")
 video_ext = ("mp4", "3gp", "ogg", "wmv", "webm", "flv", "3g2", "asf", "avi", "mov", "rm", "srt", "swf", "m4v", "vob")
@@ -362,24 +365,49 @@ def min_ip(ip1, ip2):
 def pretify_time(seconds):
     
     seconds = int(seconds)
-    hours, minutes = 0, 0
+    years, months, days, hours, minutes = 0, 0, 0, 0, 0
     if seconds >= 60:
         minutes = seconds // 60
         seconds = seconds % 60
     if minutes >= 60:
         hours = minutes // 60
         minutes = minutes % 60
+    if hours >= 24:
+        days = hours // 24
+        hours = hours % 24
+    if days >= 30:
+        months = days // 30
+        days = days % 30
+    if months >= 12:
+        years = months // 12
+        months = months % 12
     as_str = ''
-    if hours > 0:
+    if years:
+        as_str += f"{years} year"
+        as_str = as_str + 's' if years > 1 else as_str
+        as_str += " "
+        if days:
+            days -= years * 5
+            days -= years // 4
+    if months:
+        as_str += f"{months} month"
+        as_str = as_str + 's' if months > 1 else as_str
+        as_str += " "
+    if days:
+        as_str += f"{days} day"
+        as_str = as_str + 's' if days > 1 else as_str
+        as_str += " "
+    if hours:
         as_str += f"{hours} hour"
         as_str = as_str + 's' if hours > 1 else as_str
         as_str += " "
-    if minutes > 0 or hours > 0:
+    if minutes:
         as_str += f"{minutes} minute"
         as_str = as_str + 's' if minutes > 1 else as_str
         as_str += " "
-    as_str += f"{seconds} second"
-    as_str = as_str + 's' if seconds > 1 else as_str
+    if seconds:
+        as_str += f"{seconds} second"
+        as_str = as_str + 's' if seconds > 1 else as_str
     return as_str
 
 def is_accessable(path, for_visitor=False):
@@ -840,6 +868,15 @@ def flexible_select(f, items=None, return_exact=False):
             stat = os.stat(item)
             if abs(stat.st_ctime - now.timestamp()) > max_interval and abs(stat.st_mtime - now.timestamp()) > max_interval:
                 not_to_take.add(item)
+    match = age_pat.search(f)
+    f = age_pat.sub("", f)
+    if match:
+        items.sort(key=lambda item: os.stat(item).st_ctime )
+        if match.group(1) == "new":
+            items.reverse()
+            logger.debug("taking recents")
+        logger.debug(match.group())
+        items = items[:int(match.group(2))]
     match = size_pat.search(f)
     f = size_pat.sub("", f)
     if match:
@@ -987,4 +1024,4 @@ class Message:
 
 
 #name: parsers.py
-#updated: 1611562676
+#updated: 1612149066

@@ -28,10 +28,10 @@ titles = {
 }
 update_history = {
     "src/python/assets.py": 1611150762,
-    "src/python/configs.py": 1611332782,
-    "src/python/executor.py": 1611333254,
-    "src/python/helps.py": 1611334866,
-    "src/python/parsers.py": 1611332650,
+    "src/python/configs.py": 1612148569,
+    "src/python/executor.py": 1612148766,
+    "src/python/helps.py": 1612116842,
+    "src/python/parsers.py": 1612149066,
     "src/python/maintainer.py": 1611335225,
     "main.py": 1611313614,
     "README.txt": 1611293247,
